@@ -1,0 +1,477 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Montserrat', sans-serif;
+}
+
+// setting up default styling
+:root{
+  --primaryColor: hsl(244, 72%, 87%);
+  --hoverColor: hsl(245, 82%, 97%);
+  --paleGreen: hsl(96, 55%, 89%);
+  --blackColor: #000;
+  --whiteColor: #fff;
+  --greyText: hsl(0, 0%, 75%);
+  --bgColor: hsl(113, 11%, 85%);
+  --inputColor: hsl(330, 12%, 97%);
+
+  /* font and typography */
+  --Biggest-font-size: 2rem;
+  --h1-font-size: 1.5rem;
+  --h2-font-size: 1.25rem;
+  --h3-font-size: 1.125rem;
+  --normal-font-size: 1rem;
+  --small-font-size: 0.875rem;
+  --smallest-font-size: 0.75rem;
+}
+
+.flex{
+  display: flex;
+  align-items: center;
+}
+
+.grid{
+  display: grid;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+html{
+  font-size: 90%;
+}
+
+a{
+  text-decoration: none;
+}
+
+li{
+  list-style: none;
+}
+
+.icon{
+  font-size: var(--h2-font-size);
+  cursor: pointer;
+}
+
+img, video{
+  width: 100%;
+  height: auto;
+}
+
+.message{
+  display: none;
+}
+
+.showMessage{
+  display: block;
+  color: var(--blackColor);
+  padding: 10px;
+  background: rgb(255, 255, 255);
+  border-radius: 3px;
+  text-align: center;
+}
+
+.btn{
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: .8rem 1rem;
+  color: var(--greyText);
+}
+
+.btn .icon{
+  margin-left: .5rem;
+}
+
+.btn:hover{
+  background: var(--primaryColor);
+  color: var(--blackColor);
+}
+
+.chat, .profile{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+
+  .accountDetails{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    background: var(--inputColor);
+    border-radius: 10px;
+  }
+
+  .chatDiv{
+    width: 100%;
+    max-width: 100%;
+    padding: 0; 
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    width: 100%;
+    background: var(--hoverColor);
+  }
+  
+  .header-image {
+    flex: 0 0 10%;
+    max-width: 10%;
+    height: auto; /* Adjust height based on your needs */
+  }
+  
+  .header-links {
+    display: flex;
+    margin-left: auto;
+    gap: 15px;
+  }
+  
+  .header-links a {
+    text-decoration: none;
+    color: #333; /* Change to desired color */
+    font-weight: bold;
+  }
+
+  .footer{
+    display: flex;
+    gap: 1rem;
+    padding: 3rem;
+    align-items: center;
+    width: 100%;
+    background: var(--hoverColor);
+  }
+
+  .footer-text{
+    color: var(--blackColor);
+    font-size: var(--small-font-size);
+    // centering the text
+    position: absolute;
+    left: 80%;
+  }
+  
+}
+
+// page stylings
+.loginPage, .registerPage{
+  height: 100vh;
+  width: 100%;
+  margin: auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 7px 50px rgb(214, 223, 213);
+
+  .container{
+    height: 75vh;
+    width: 60%;
+    margin: auto;
+    justify-content: space-between;
+    border-radius: 10px;
+    background: hsl(0, 0%, 91%);
+
+    .videoDiv{
+      position: relative;
+      display: flex;
+      flex-basis: 50%;
+      width: 70%;
+      height: 100%;
+      padding: 0 1.5rem;
+      text-align: center;
+      justify-content: center;
+      flex-direction: column;
+      margin: auto;
+      border-radius: 10px;
+      overflow: hidden;
+
+      video, .footerDiv{
+        position: absolute;
+      }
+      video{
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+      }
+
+      .textDiv{
+        position: relative;
+
+        .title{
+          color: var(--whiteColor);
+          font-size: var(--Biggest-font-size);
+          font-weight: 800;
+        }
+
+        .p{
+          color: var(--whiteColor);
+          padding: 1rem;
+          font-weight: 400;
+
+        }
+
+      }
+
+      .footerDiv{
+        bottom: 10px;
+        padding: 0 1rem;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.248);
+        left: 10px;
+        right: 10px;
+        justify-content: space-between;
+        backdrop-filter: blur(1px);
+        border-radius: 10px;
+
+        .text{
+          color: var(--whiteColor)
+        }
+
+        .btn{
+          background: var(--whiteColor);
+          color: var(--primary-color);
+          padding: .8rem 1.5rem;
+          border-radius: 10px;
+          font-weight: 400;
+          transition: .3s ease;
+
+          &:hover{
+            background: var(--hoverColor);
+            color: var(--blackColor);
+          }
+        }
+      }
+    }
+
+    .formDiv{
+      flex-basis: 50%;
+      gap: 1.5rem;
+      flex-direction: column;
+      margin: auto;
+      transform: translateY(-1rem);
+
+      .headerDiv{
+        text-align: center;
+        padding: 1.5rem 0;
+        
+        img{
+          width: 60px;
+          padding-bottom: .5rem;
+        }
+
+        h3{
+          font-size: 25px;
+          color: var(--blackColor);
+          font-weight: 600;
+        }
+      }
+
+      .form{
+        gap: 1rem;
+
+        .inputDiv{
+          .icon{
+            color: var(--greyText);
+          }
+
+          input{
+            background: none;
+            outline: none;
+            border: none;
+            width: 200px
+          }
+
+          label{
+            color: var(--blackColor);
+            font-weight: 400;
+            font-size: var(--normal-font-size);
+            padding: .5rem 0;
+            display: block;
+          }
+
+          .input{
+            gap: .5rem;
+            padding: 1rem;
+            background: var(--inputColor);
+            border-radius: 10px;
+          }
+        }
+
+        .btn{
+          padding: .8rem;
+          background: var(--primaryColor);
+          border-radius: 10px;
+          color: var(--whiteColor);
+          align-items: center;
+          margin: auto;
+          justify-content: center;
+          font-size: 16px;
+          width: 100%;
+          gap: .5rem;
+          transition: .3s ease;
+
+          .icon{
+            font-size: 25px;
+            transition: 0.3s ease;
+          }
+
+          &:hover{
+            background: var(--hoverColor);
+            color: var(--blackColor);
+
+            .icon{
+              color: var(--blackColor);
+              transform: translateX(5px);
+            }
+          }
+        }
+
+        .forgotPassword{
+          font-size: var(--small-font-size);
+          color: var(--blackColor);
+          opacity: .7;
+          text-align: center;
+
+          a{
+            text-decoration: underline;
+            cursor: pointer;
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 602px){
+  .loginPage, .registerPage{
+    .container{
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    padding: 1.5rem;
+
+    .videoDiv{
+      width: 100%;
+      .textDiv{
+        .title{
+          font-size: 20px;
+        }
+        .p{
+          padding: 1rem;
+        }
+      }
+
+      .footerDiv{
+        .text{
+          font-size: 12px;
+        }
+        .btn{
+          padding: .4rem 1.5rem;
+        }
+      }
+    }
+
+    .formDiv{
+      gap: 1rem;
+      transform: translateY(-.5rem);
+
+      .headerDiv{
+        padding: 1rem 0;
+
+        img{
+          width: 40px;
+        }
+
+        h3{
+          font-size: 20px;
+        }
+      }
+
+      .form{
+        gap: .5rem;
+  
+        .inputDiv{
+          input{
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    }
+  }
+}
+
+@media screen and (max-width: 678px){
+  .loginPage, .registerPage{
+    .container{
+    .videoDiv{
+      .textDiv{
+        .title{
+          font-size: 25px;
+        }
+        .p{
+          padding: 1rem;
+        }
+      }
+
+      .footerDiv{
+        .text{
+          font-size: 12px;
+        }
+        .btn{
+          padding: .8rem 1.5rem;
+        }
+      }
+    }
+
+    .formDiv{ 
+
+      .headerDiv{
+        padding: 1.5rem 0;
+
+        h3{
+          font-size: 20px;
+        }
+      }
+      .form{
+        .inputDiv{
+          input{
+            width: 100%;
+            max-width: 200px;
+          }
+        }
+      }
+    }
+
+    }
+  }
+}
+
+@media screen and (max-width: 927px){
+  .loginPage, .registerPage{
+    .container{
+      width: 85%;
+
+    }
+    }
+  }
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+
+
