@@ -20,6 +20,7 @@ const SystemPrompt = () => {
       e.preventDefault();
       // Save text to sessionStorage
       sessionStorage.setItem('systemPrompt', text);
+      window.location.reload();
     };
 
   return (
