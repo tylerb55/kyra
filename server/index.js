@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(cors());
 
 // Define a route to post email and password to the database
-app.post('/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
     const SentEmail = req.body.Email;
     const SentPassword = req.body.Password;
     try {
@@ -39,7 +39,7 @@ app.post('/register', async (req, res) => {
   });
 
 // Define a route to log in if email and password are correct
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
     const SentEmail = req.body.Email;
     const SentPassword = req.body.Password;
     try {
@@ -68,7 +68,7 @@ app.post('/login', async (req, res) => {
     }
   });
 
-app.post('/createDetails', async (req, res) => {
+app.post('/api/createDetails', async (req, res) => {
   const sentName = req.body.Name;
   const email = req.body.Email;
   const phoneNumber = req.body.Phone;
@@ -101,7 +101,7 @@ app.post('/createDetails', async (req, res) => {
   }
 });
 
-app.post('/update-details', async (req, res) => {
+app.post('/api/update-details', async (req, res) => {
   const sentName = req.body.Name;
   const email = req.body.Email;
   const phoneNumber = req.body.Phone;
@@ -130,6 +130,6 @@ app.post('/update-details', async (req, res) => {
 });
 
 // Start the Express server
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${port}`);
   });
