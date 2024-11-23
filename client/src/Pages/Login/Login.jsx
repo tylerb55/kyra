@@ -24,7 +24,7 @@ const Login = () => {
 
     const LoginUser = (e) => {
         e.preventDefault();
-        Axios.post('http://16.171.196.43:3000/api/login', {
+        Axios.post('http://16.171.196.43/api/login', {
             Email: email,
             Password: password,
         }).then((response) => {

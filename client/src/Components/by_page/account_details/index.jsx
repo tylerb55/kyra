@@ -23,7 +23,7 @@ export default function AccountDetails() {
 
     const updateDetails = (e) => {
       e.preventDefault();
-      Axios.post('http://16.171.196.43:3000/api/createDetails', {
+      Axios.post('http://16.171.196.43/api/createDetails', {
           Name: name,
           Email: accountDetails.email,
           Phone: phone,

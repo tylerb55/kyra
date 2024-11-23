@@ -24,7 +24,7 @@ const Register = () => {
 
     const createUser = (e) => {
         e.preventDefault();
-        Axios.post('http://16.171.196.43:3000/api/register', {
+        Axios.post('http://16.171.196.43/api/register', {
             Email: email,
             Password: password,
         }).then((response) => {
