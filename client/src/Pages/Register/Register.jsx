@@ -24,7 +24,7 @@ const Register = () => {
 
     const createUser = (e) => {
         e.preventDefault();
-        Axios.post('http://localhost:3000/api/register', {
+        Axios.post('/api/register', {
             Email: email,
             Password: password,
         }).then((response) => {
