@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "fastapi-dev": "pip install -r ../backend/requirements.txt && cd ../backend && python -m uvicorn app:app --reload --port 8000",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
