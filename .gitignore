@@ -1,0 +1,53 @@
+# === General ===
+.DS_Store
+Thumbs.db
+*.log
+*.out
+*.err
+debug.log
+*.bak
+*.tmp
+
+# === Python (FastAPI Backend) ===
+__pycache__/
+*.py[cod]
+venv/
+env/
+.env
+.env.local
+.env.*.local
+*.sqlite3
+instance/
+
+# === Node.js (Next.js Frontend) ===
+node_modules/
+npm-debug.log*
+yarn.lock
+package-lock.json
+.next/
+out/
+dist/
+
+# === Supabase ===
+supabase/.temp/
+supabase/functions/node_modules/
+supabase/.supabase/
+
+# === OS/Editor/IDE Files ===
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.iml
+
+# === Build Artifacts ===
+build/
+coverage/
+*.map
+
+# === Git Specific ===
+.git/
+
