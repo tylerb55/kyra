@@ -1,3 +1,5 @@
+-- Enable the vector extension first
+create extension if not exists vector;
 -- Custom types
 create type public.app_role as enum ('admin', 'user', 'doctor');
 
@@ -71,7 +73,7 @@ create policy "Allow individual read access" on public.messages for select using
 create policy "Allow individual insert access" on public.messages for insert with check ( auth.uid() = user_id );
 create policy "Allow individual read access" on public.user_roles for select using ( auth.uid() = user_id );
 create policy "Allow authenticated read access" on public.rag_documents for select using ( auth.role() = 'authenticated' );
-create policy "Allow admin insert access" on public.rag_documents for insert using ( 
+create policy "Allow admin insert access" on public.rag_documents for insert with check ( 
   exists (
     select 1 from public.user_roles 
     where user_id = auth.uid() and role = 'admin'
