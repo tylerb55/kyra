@@ -14,8 +14,8 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const router = useRouter();
     const supabase = createClientComponentClient({
-        supabaseUrl: process.env.SUPABASE_URL,
-        supabaseKey: process.env.SUPABASE_KEY
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     });
 
     const [loginStatus, setLoginStatus] = useState('');
