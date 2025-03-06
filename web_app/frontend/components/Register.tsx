@@ -14,9 +14,6 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const router = useRouter();
 
-    const [registerStatus, setRegisterStatus] = useState('');
-    const [statusHolder, setStatusHolder] = useState('message');
-
     const { setAccountDetails } = useAccount();
     
     // Use useEffect to set account details to null on component mount

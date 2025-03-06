@@ -3,15 +3,23 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 // Account Context
+interface AccountDetails {
+  // Add the specific properties your account has
+  id?: string;
+  name?: string;
+  email?: string;
+  // Add other properties as needed
+}
+
 interface AccountContextType {
-  accountDetails: any | null;
-  setAccountDetails: (details: any | null) => void;
+  accountDetails: AccountDetails | null;
+  setAccountDetails: (details: AccountDetails | null) => void;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
-  const [accountDetails, setAccountDetails] = useState<any | null>(() => {
+  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(() => {
     // Load from localStorage on initialization (client-side only)
     if (typeof window !== 'undefined') {
       const savedAccount = localStorage.getItem('accountDetails');

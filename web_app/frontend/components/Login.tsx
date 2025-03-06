@@ -32,7 +32,7 @@ const Login = () => {
         }).then((response) => {
             console.log(response);
             if (response.status === 200) {
-                setAccountDetails(response);
+                setAccountDetails(response.data);
                 router.push('/chat');
             } else {
                 router.push('/');
@@ -73,7 +73,7 @@ const Login = () => {
                     </div>
 
                     <div className="footerDiv flex">
-                        <span className="text">Don't have an account?</span>
+                        <span className="text">Don&apos;t have an account?</span>
                         <Link href="/register" className="link">
                             <button className="btn">Sign Up</button>
                         </Link>

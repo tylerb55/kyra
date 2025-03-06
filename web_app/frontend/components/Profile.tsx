@@ -1,8 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
-import Image from 'next/image';
 
 interface UserProfile {
   username: string;
@@ -14,7 +12,6 @@ interface UserProfile {
 }
 
 const Profile = () => {
-  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile>({
     username: '',
     diagnosis: '',

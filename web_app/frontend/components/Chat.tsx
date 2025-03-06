@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from "react";
-import { useAccount } from '@/app/contexts';
 import { motion } from "framer-motion";
 import "../styles/App.css";
 import axios from 'axios';
@@ -36,7 +35,6 @@ const Chat = () => {
   const [mode, setMode] = useState<'RAG' | 'Browser'>('RAG');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { accountDetails } = useAccount();
   const [sessionId, setSessionId] = useState(null);
 
   // Auto-scroll to bottom when messages change
