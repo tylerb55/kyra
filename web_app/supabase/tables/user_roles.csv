@@ -1,0 +1,8 @@
+id,user_id,role
+1,524b5d50-fba6-42a4-8a8b-06516a5e1e08,user
+2,6b8e0e1c-7794-4c29-87f9-1a24ef64be91,user
+3,be4e5436-46f6-4988-a3c3-9d985d031aa0,user
+4,ce3982ef-07af-442e-91bc-07b9037f796a,user
+5,7c41938b-84aa-47e3-acdf-2463f50181f1,user
+6,1b41906d-c7c7-433a-83fd-2d2fdaee788b,doctor
+7,43160526-1211-45f6-a83d-d10dfde1d2e4,admin
