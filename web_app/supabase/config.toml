@@ -4,16 +4,10 @@ project_id = "kyra"
 
 [api]
 enabled = true
-# Port to use for the API URL.
-port = 54321
-# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
-# endpoints. public and storage are always included.
-schemas = ["public"]
-# Extra schemas to add to the search_path of every request. public is always included.
+schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
-# The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
-# for accidental or malicious requests.
 max_rows = 1000
+port = 54321
 
 [db]
 # Port to use for the local database URL.
@@ -31,23 +25,11 @@ enabled = true
 
 [auth]
 enabled = true
-# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
-# in emails.
-site_url = "env(NEXT_SITE_URL)"
-# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = [
-    # Will be localhost:3000 in development or the URL of your deployed app in production.
-    "env(NEXT_REDIRECT_URLS)",
-]
-# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://127.0.0.1:3000"]
 jwt_expiry = 3600
-# If disabled, the refresh token will never expire.
 enable_refresh_token_rotation = true
-# Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
-# Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
-# Allow/disallow new user signups to your project.
-enable_signup = true
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -81,8 +63,9 @@ port = 54324
 # Enable auth hooks
 # https://supabase.com/docs/guides/auth/auth-hooks#local-development
 [auth.hook.custom_access_token]
-enabled = true
-uri = "pg-functions://postgres/public/custom_access_token_hook"
+enabled = false
+uri = ""
+secrets = ""
 
 [analytics]
 enabled = false
