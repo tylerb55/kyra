@@ -1,18 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, ShieldAlert, ArrowRight } from "lucide-react";
 import { useAccount } from "@/app/contexts";
 import "../styles/App.css";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const router = useRouter();
+    const supabase = createClientComponentClient({
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabaseKey: process.env.SUPABASE_KEY 
+});
+
+    const [registerStatus, setRegisterStatus] = useState('');
+    const [statusHolder, setStatusHolder] = useState('message');
 
     const { setAccountDetails } = useAccount();
     
@@ -21,27 +28,39 @@ const Register = () => {
         setAccountDetails(null);
     }, [setAccountDetails]);
 
-    const createUser = (e: React.FormEvent) => {
+    const createUser = async (e: React.FormEvent) => {
         e.preventDefault();
-        axios.post('http://16.171.196.43/api/register', {
-            Email: email,
-            Password: password,
-        }).then((response) => {
-            console.log(response);
-            if (response.status === 201) {
-                setAccountDetails({email: email});
-                router.push('/profile');
+        try{
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                setRegisterStatus('Registration failed');
+                throw error;
             } else {
-                alert(response.status);
-                router.push('/register');
+                setRegisterStatus('Registration successful');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error.response ? error.response.data : error.message);
-            alert(error.response ? error.response.data : error.message);
-            router.push('/register');
-        });
+
+            setAccountDetails(data.user);
+            router.push('/profile');
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error("Error:", errorMessage);
+            setRegisterStatus(`Registration failed: ${errorMessage}`);
+        }
     }
+
+    useEffect(() => {
+        if(registerStatus !== ''){
+            setStatusHolder('showMessage');
+            setTimeout(() => {
+                setStatusHolder('message');
+                setRegisterStatus('');
+            }, 3000);
+        }
+    }, [registerStatus]);
 
     const onSubmit = () => {
         setEmail('');
@@ -79,6 +98,7 @@ const Register = () => {
                     </div>
 
                     <form action="" className='form grid' onSubmit={onSubmit}>
+                        <span className={statusHolder}>{registerStatus}</span>
                         <div className="inputDiv">
                             <label htmlFor="email">Email</label>
                             <div className="input flex">
