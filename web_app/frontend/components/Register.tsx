@@ -8,14 +8,15 @@ import { Mail, ShieldAlert, ArrowRight } from "lucide-react";
 import { useAccount } from "@/app/contexts";
 import "../styles/App.css";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
 
 const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const router = useRouter();
     const supabase = createClientComponentClient({
-        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-        supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+        supabaseUrl: SUPABASE_URL,
+        supabaseKey: SUPABASE_ANON_KEY
 });
 
     const [registerStatus, setRegisterStatus] = useState('');
