@@ -87,14 +87,12 @@ const Register = () => {
 
                 <div className="formDiv flex">
                     <div className="headerDiv">
-                        <Link href="/landing">
-                            <Image 
-                                src="/logo.png" 
-                                alt="logo" 
-                                width={60} 
-                                height={60} 
-                            />
-                        </Link>
+                        <Image 
+                            src="/logo.png" 
+                            alt="logo" 
+                            width={60} 
+                            height={60} 
+                        />
                         <h3>Join Us!</h3>
                     </div>
 
