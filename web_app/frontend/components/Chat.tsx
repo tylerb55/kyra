@@ -26,10 +26,9 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [savedChats, setSavedChats] = useState<SavedChat[]>([
     { id: '1', title: 'Hello and Greeting', messages: [], timestamp: 'Today' },
-    { id: '2', title: 'Next.js Project Setup', messages: [], timestamp: 'Today' },
-    { id: '3', title: 'Next.js UI Conversion', messages: [], timestamp: 'Today' },
-    { id: '4', title: 'Vite to Next.js Migration', messages: [], timestamp: 'Today' },
-    { id: '5', title: 'Confusion Matrix Error Debug', messages: [], timestamp: 'Yesterday' },
+    { id: '2', title: 'Next.js UI Conversion', messages: [], timestamp: 'Today' },
+    { id: '3', title: 'Vite to Next.js Migration', messages: [], timestamp: 'Today' },
+    { id: '4', title: 'Confusion Matrix Error Debug', messages: [], timestamp: 'Yesterday' },
   ]);
   const [inputText, setInputText] = useState('');
   const [mode, setMode] = useState<'RAG' | 'Browser'>('RAG');
@@ -86,7 +85,17 @@ const Chat = () => {
         timestamp: getFormattedTime()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const source = response.data.source;
+      const sourceString = source.map((item: { source: string; author: string }) => `${item.source} by ${item.author}`).join('\n');
+
+      const sourceMessage: Message = {
+        id: generateId(),
+        text: sourceString,
+        sender: 'assistant',
+        timestamp: getFormattedTime()
+      };
+
+      setMessages(prev => [...prev, assistantMessage, sourceMessage]);
     } else if (mode === 'Browser') {
       const response = await axios.post('http://localhost:8000/browser-rag', {
         "query": inputText,
@@ -102,7 +111,17 @@ const Chat = () => {
         timestamp: getFormattedTime()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const source = response.data.source;
+      const sourceString = source.map((item: { source: string; author: string }) => `${item.source} by ${item.author}`).join('\n');
+
+      const sourceMessage: Message = {
+        id: generateId(),
+        text: sourceString,
+        sender: 'assistant',
+        timestamp: getFormattedTime()
+      };
+
+      setMessages(prev => [...prev, assistantMessage, sourceMessage]);
     }
   };
 
