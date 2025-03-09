@@ -88,12 +88,14 @@ const Login = () => {
 
                 <div className="formDiv flex">
                     <div className="headerDiv">
-                        <Image 
-                            src="/logo.png" 
-                            alt="logo" 
-                            width={60} 
-                            height={60} 
-                        />
+                        <Link href="/landing">
+                            <Image 
+                                src="/logo.png" 
+                                alt="logo" 
+                                width={60} 
+                                height={60} 
+                            />
+                        </Link>
                         <h3>Welcome Back!</h3>
                     </div>
 

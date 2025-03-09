@@ -18,7 +18,9 @@ function Header() {
 
   return (
     <header className="header">
-      <Image src={logo} alt="photo" className="header-image" width={60} height={60} />
+      <Link href="/landing">
+        <Image src={logo} alt="photo" className="header-image" width={60} height={60} />
+      </Link>
       <div className="header-links">
         <Link href="/chat">Chat</Link>
         <Link href="/profile">Profile</Link>
