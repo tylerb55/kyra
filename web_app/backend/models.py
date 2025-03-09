@@ -21,7 +21,6 @@ class TokenData(BaseModel):
 # RAG query models
 class BrowserRagRequest(BaseModel):
     query: str
-    urls: List[str]
     session_id: Optional[str] = None
 
 class DatabaseRagRequest(BaseModel):
@@ -34,9 +33,9 @@ class ClearConversationRequest(BaseModel):
     conversation_name: Optional[str] = None
 
 class RagResponse(BaseModel):
-    answer: str
-    session_id: str
-    
+    answer: str  
+    source: Optional[List[Dict[str, str]]] = None
+    session_id: Optional[str] = None
 class UserProfile(BaseModel):
     id: str
     username: Optional[str] = None

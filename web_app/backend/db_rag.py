@@ -14,5 +14,5 @@ def format_context_from_records(records) -> str:
             # Extract text from the record
             text = record[2].get('text', str(record))
             context_str += f"Document {i+1}:\n{text}\n\n"
-            source_details.append({"Source: " + record[2]["source"]," Author: " + record[2]["author"]})
+            source_details.append(f"[{i}] Source: {record[2]['source']}, Author: {record[2]['author']}\n")
     return context_str, source_details

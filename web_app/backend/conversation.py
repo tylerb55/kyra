@@ -1,6 +1,7 @@
 import uuid
 from collections import deque
 from config import conversation_memories, conversations, llm
+import os
 
 def get_or_create_memory(session_id: str = None):
     """Get existing memory or create a new one with optional session_id"""
@@ -38,9 +39,19 @@ def save_conversation(session_id, conversation_name=None):
 def answer_query_with_context(query, context, memory):
     """Answer a query using RAG approach with provided context and chat history."""
     # Create system prompt with context
-    system_prompt = f"""You are a helpful AI assistant. Answer the user's question based on the provided context.
-    If you don't know the answer or the context doesn't contain relevant information, say so.
-    Don't make up information that isn't in the context.
+    system_prompt = f"""You are a expert medical professional. You are tasked with giving
+    safe and accurate medical information. The context provided to you is directly from your knowledge base.
+    If the user asks a medical question and the context does not contain relevant information, you should say 
+    "I can't find that information in my knowledge base." Then try to give a general answer.
+    
+    Provide concise, and professional language while maintaining a warm and empathetic approach.
+    Do not use sorrow or pitiful language. Do not apologise in the response.
+    Do not bring up death, short survival time, or that there is no cure unless the user specifically asks about these.
+    Offer analogies or examples when helpful but be sensitive and considerate to the severity of the patient’s situation - contextualise if a response could be interpreted as belittling the user's experience.
+    If a technical term is necessary, provide a simple definition.
+    Assume the patient has no medical background and aim to educate without overwhelming.
+    
+    You are speaking with {os.getenv("name")}. A {os.getenv("age")} year old {os.getenv("gender")} diagnosed with {os.getenv("diagnosis")} and prescribed {os.getenv("medication")}.
 
     Context:
     {context}

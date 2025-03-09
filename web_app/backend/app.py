@@ -10,7 +10,7 @@ import traceback
 
 # Import local modules
 from models import *
-from browser_rag import load_and_process_documents, create_vector_index, retrieve_relevant_documents as browser_retrieve, format_context_from_nodes
+from browser_rag import query_browser, create_vector_index, browser_retrieve, format_context_from_nodes
 from db_rag import retrieve_relevant_documents as db_retrieve, format_context_from_records
 from conversation import get_or_create_memory, save_conversation, answer_query_with_context
 from config import *
@@ -141,19 +141,23 @@ async def browser_rag(request: BrowserRagRequest):
         session_id, memory = get_or_create_memory(request.session_id)
         
         # Load and process documents from URLs
-        documents = load_and_process_documents(request.urls)
-        
+        documents = query_browser(request.query)
+        if not documents:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Search query returned no results"
+            )
         # Create vector index
         index = create_vector_index(documents)
         
         # Retrieve relevant documents
         retrieved_nodes = browser_retrieve(index, request.query)
-        context = format_context_from_nodes(retrieved_nodes)
+        context, source_details = format_context_from_nodes(retrieved_nodes)
         
         # Generate response
         answer = answer_query_with_context(request.query, context, memory)
         
-        return {"answer": answer, "session_id": session_id}
+        return {"answer": answer, "source": source_details, "session_id": session_id}
     
     except Exception as e:
         raise HTTPException(
@@ -220,6 +224,13 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
                 detail="Profile not found"
             )
             
+        # Set default environment variables
+        os.environ["name"] = profile["name"]
+        os.environ["age"] = profile["age"]
+        os.environ["gender"] = profile["gender"]
+        os.environ["diagnosis"] = profile["diagnosis"]
+        os.environ["medication"] = profile["medication"]
+        
         return UserProfile(
             id=id,
             username=profile["username"],
@@ -293,6 +304,13 @@ async def update_profile(profile: UserProfile):
         # Update the user profile
         update_response = supabase_client.table("users").update(profile_data).eq("id", user_id).execute()
         print("Update response:", update_response)
+        
+        # Update environment variables
+        os.environ["name"] = profile_data["name"]
+        os.environ["age"] = profile_data["age"]
+        os.environ["gender"] = profile_data["gender"]
+        os.environ["diagnosis"] = profile_data["diagnosis"]
+        os.environ["medication"] = profile_data["medication"]
         
         # Return the updated profile with the user_id field
         return UserProfile(
