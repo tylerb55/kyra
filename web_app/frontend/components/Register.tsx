@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, ShieldAlert, ArrowRight } from "lucide-react";
-import { useAccount, useAuth } from "@/app/contexts";
+import { useAuth } from "@/app/contexts";
 import "../styles/App.css";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
@@ -22,12 +22,7 @@ const Register = () => {
     const [registerStatus, setRegisterStatus] = useState('');
     const [statusHolder, setStatusHolder] = useState('message');
 
-    const { setAccountDetails, setUserId } = useAuth();
-    
-    // Use useEffect to set account details to null on component mount
-    useEffect(() => {
-        setAccountDetails(null);
-    }, [setAccountDetails]);
+    const { login } = useAuth();
 
     const createUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,8 +39,11 @@ const Register = () => {
                 setRegisterStatus('Registration successful');
             }
 
-            setAccountDetails(data.user);
-            router.push('/profile');
+            // Store user ID in auth context
+            if (data.user && data.user.id && data.session?.access_token) {
+                login(data.session.access_token, data.user.id);
+                router.push('/profile');
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error("Error:", errorMessage);

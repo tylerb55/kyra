@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useProfile } from "../contexts";
 
 export const useProfileRedirect = (redirectToProfile: true) => {
-    const { profile, loading, isProfileComplete } = useProfile();
+    const { profile, loading } = useProfile();
     const router = useRouter();
 
     useEffect(() => {
@@ -12,17 +12,17 @@ export const useProfileRedirect = (redirectToProfile: true) => {
         if (loading) return;
 
         // if profile is incomplete and we should redirect
-        if (!isProfileComplete && redirectToProfile) {
+        if (redirectToProfile) {
             router.push("/profile");
         }
 
         // If profile is complete and we should Not be on the profile page
-        if (isProfileComplete() && !redirectToProfile) {
+        if (!redirectToProfile) {
             router.push("/chat");
         }
-    }, [profile, loading, router, redirectToProfile, isProfileComplete]);
+    }, [profile, loading, router, redirectToProfile]);
 
-    return { isProfileComplete: isProfileComplete(), loading };
+    return { isProfileComplete: !redirectToProfile, loading };
 };
 
 
