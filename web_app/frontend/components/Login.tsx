@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, ShieldAlert, ArrowRight } from "lucide-react";
 import "../styles/App.css";
-import { useAccount } from "@/app/contexts";
+import { useAuth } from "@/app/contexts";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
 
@@ -22,12 +22,7 @@ const Login = () => {
     const [loginStatus, setLoginStatus] = useState('');
     const [statusHolder, setStatusHolder] = useState('message');
 
-    const { setAccountDetails } = useAccount();
-    
-    // Use useEffect to set account details to null on component mount
-    useEffect(() => {
-        setAccountDetails(null);
-    }, [setAccountDetails]);
+    const { login } = useAuth();
 
     const loginUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,8 +39,11 @@ const Login = () => {
                 setLoginStatus('Login successful');
             }
 
-            setAccountDetails(data.user);
-            router.push('/chat');
+            // Store user ID in auth context
+            if (data.user && data.user.id && data.session?.access_token) {
+                login(data.session.access_token, data.user.id);
+                router.push('/chat');
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error("Error:", errorMessage);

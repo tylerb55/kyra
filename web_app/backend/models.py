@@ -36,3 +36,13 @@ class ClearConversationRequest(BaseModel):
 class RagResponse(BaseModel):
     answer: str
     session_id: str
+    
+class UserProfile(BaseModel):
+    id: str
+    username: Optional[str] = None
+    diagnosis: Optional[str] = None
+    prescription: Optional[str] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    ethnicity: Optional[str] = None
+    updated_at: Optional[str] = None

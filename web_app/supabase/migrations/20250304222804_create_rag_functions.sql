@@ -5,16 +5,31 @@ create type public.app_role as enum ('admin', 'user', 'doctor');
 
 -- USERS (Medical Patients)
 create table public.users (
-  id          uuid references auth.users not null primary key, -- UUID from auth.users
+  id          uuid references auth.users not null primary key ON DELETE CASCADE, -- UUID from auth.users
   username    text,
   diagnosis   text,
   prescription text,
   age         integer,
   gender      text,
-  ethnicity   text
+  ethnicity   text,
+  updated_at  timestampz default now()
 );
 comment on table public.users is 'Profile data for each patient.';
 comment on column public.users.id is 'References the internal Supabase Auth user.';
+
+-- Create a trigger to automatically create a profile when a user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_profiles (auth_user_id, username)
+  VALUES (NEW.id, NEW.email);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- MESSAGES (Patient-AI Conversations)
 create table public.messages (

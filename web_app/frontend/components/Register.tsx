@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, ShieldAlert, ArrowRight } from "lucide-react";
-import { useAccount } from "@/app/contexts";
+import { useAccount, useAuth } from "@/app/contexts";
 import "../styles/App.css";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
@@ -22,7 +22,7 @@ const Register = () => {
     const [registerStatus, setRegisterStatus] = useState('');
     const [statusHolder, setStatusHolder] = useState('message');
 
-    const { setAccountDetails } = useAccount();
+    const { setAccountDetails, setUserId } = useAuth();
     
     // Use useEffect to set account details to null on component mount
     useEffect(() => {

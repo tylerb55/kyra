@@ -1,19 +1,23 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 import jwt
 import os
 from dotenv import load_dotenv
+import traceback
 
 # Import local modules
-from models import User, Token, TokenData, BrowserRagRequest, DatabaseRagRequest, ClearConversationRequest, RagResponse
+from models import *
 from browser_rag import load_and_process_documents, create_vector_index, retrieve_relevant_documents as browser_retrieve, format_context_from_nodes
 from db_rag import retrieve_relevant_documents as db_retrieve, format_context_from_records
 from conversation import get_or_create_memory, save_conversation, answer_query_with_context
-from agent import RAGAgent, supabase_client
 from config import *
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # Load environment variables
 load_dotenv()
@@ -202,10 +206,121 @@ async def clear_conversation(request: ClearConversationRequest):
             detail=f"Error clearing conversation: {str(e)}"
         )
 
+@app.get("/profile", response_model=UserProfile)
+async def get_profie(id: str = Query(..., description="User ID to retrieve profile for")):
+    try:
+        # Get profile from database
+        response = supabase_client.table("users").select("*").eq("id", id).execute()
+        profile = response.data[0] if response.data else None
+        
+    
+        if not profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Profile not found"
+            )
+            
+        return UserProfile(
+            id=id,
+            username=profile["username"],
+            diagnosis=profile["diagnosis"],
+            prescription=profile["prescription"],
+            age=profile["age"],
+            gender=profile["gender"],
+            ethnicity=profile["ethnicity"],
+            updated_at=profile["updated_at"]
+        )
+    
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting profile: {str(e)}"
+        )
+
+@app.put("/profile", response_model=UserProfile)
+async def update_profile(profile: UserProfile):
+    try:
+        if not all([
+            profile.id,
+            profile.diagnosis,
+            profile.prescription,
+            profile.age,
+            profile.gender,
+            profile.ethnicity,
+            profile.username
+        ]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="All fields are required"
+            )
+            
+        # Check if user exists
+        response = supabase_client.table("users").select("*").eq("id", profile.id).execute()
+        user = response.data[0] if response.data else None
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {profile.id} not found"
+            )
+        
+        # Convert model to dictionary and prepare data for update
+        profile_data = profile.model_dump()
+        
+        # Remove 'user_id' from the data being sent to the database
+        # since the database uses 'id' instead of 'user_id'
+        user_id = profile_data.pop('id')
+        
+        # Add updated_at timestamp
+        profile_data["updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S%z")[:-2]
+
+        # Print the profile data for debugging
+        print("Profile data to update:", profile_data)
+        print("User data from database:", user)
+
+        # Handle username change if needed
+        if user["username"] != profile.username:
+            # check if username is taken
+            username_check = supabase_client.table("users").select("*").eq("username", profile.username).execute()
+            if username_check.data and username_check.data[0]["id"] != user["id"]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username already taken"
+                )
+        
+        # Update the user profile
+        update_response = supabase_client.table("users").update(profile_data).eq("id", user_id).execute()
+        print("Update response:", update_response)
+        
+        # Return the updated profile with the user_id field
+        return UserProfile(
+            id=user_id,
+            username=profile_data["username"],
+            diagnosis=profile_data["diagnosis"],
+            prescription=profile_data["prescription"],
+            age=profile_data["age"],
+            gender=profile_data["gender"],
+            ethnicity=profile_data["ethnicity"],
+            updated_at=profile_data["updated_at"]
+        )
+    
+    except HTTPException as e:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Include the traceback in the error detail
+        tb = traceback.format_exc()
+        print(f"Error updating profile: {str(e)}\n{tb}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating profile: {str(e)}\nTraceback: {tb}"
+        )
+
 @app.get("/")
 async def root():
     return {"message": "RAG API is running. Use /browser-rag or /database-rag endpoints."}
-
 
 # User profile endpoint
 @app.get("/me")

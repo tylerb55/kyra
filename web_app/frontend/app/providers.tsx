@@ -1,13 +1,15 @@
 'use client';
 
-import { AccountProvider, SystemPromptProvider } from './contexts';
+import { AccountProvider, ProfileProvider, AuthProvider } from './contexts';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SystemPromptProvider>
       <AccountProvider>
-        {children}
+        <AuthProvider>
+          <ProfileProvider>
+            {children}
+          </ProfileProvider>
+        </AuthProvider>
       </AccountProvider>
-    </SystemPromptProvider>
   );
 }
