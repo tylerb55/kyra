@@ -2,7 +2,7 @@ import { UserProfile } from '../contexts';
 
 // Fetch the user profile from the backend
 export const fetchProfile = async (userId: string): Promise<UserProfile> => {
-  const response = await fetch(`http://localhost:8000/profile?id=${userId}`, {
+  const response = await fetch(`https://kyra-backend.onrender.com/profile?id=${userId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -23,7 +23,7 @@ export const updateProfileAPI = async (data: Partial<UserProfile>): Promise<User
   try {
     console.log('Updating profile with data:', data);
     
-    const response = await fetch('http://localhost:8000/profile', {
+    const response = await fetch('https://kyra-backend.onrender.com/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

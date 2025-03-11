@@ -71,7 +71,7 @@ const Chat = () => {
     
     // Make a request to the backend
     if (mode === 'RAG') {
-      const response = await axios.post('http://localhost:8000/database-rag', {
+      const response = await axios.post('https://kyra-backend.onrender.com/database-rag', {
         "query": inputText,
         "session_id": sessionId
       });
@@ -97,7 +97,7 @@ const Chat = () => {
 
       setMessages(prev => [...prev, assistantMessage, sourceMessage]);
     } else if (mode === 'Browser') {
-      const response = await axios.post('http://localhost:8000/browser-rag', {
+      const response = await axios.post('https://kyra-backend.onrender.com/browser-rag', {
         "query": inputText,
         "session_id": sessionId
       });
