@@ -1,6 +1,7 @@
 # FastAPI and server dependencies
 fastapi>=0.95.0
 uvicorn>=0.22.0
+gunicorn
 python-multipart>=0.0.6
 pydantic>=2.0.0
 
@@ -14,12 +15,14 @@ python-dotenv>=1.0.0
 
 # Database
 supabase>=1.0.3
+vecs
 psycopg2-binary>=2.9.6
 
 # LlamaIndex and AI dependencies
 llama-index>=0.8.0
 llama-index-llms-openai>=0.1.0
 llama-index-readers-web>=0.1.0
+llama-index-embeddings-huggingface>=0.1.0
 openai>=1.0.0
 
 # Utilities
