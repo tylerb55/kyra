@@ -28,7 +28,7 @@ app = FastAPI(title="RAG API with Browser and Database Support")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["kyra-sand.vercel.app"],  # kyra-sand.vercel.app in production
+    allow_origins=["https://kyra-sand.vercel.app"], # kyra-sand.vercel.app in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
