@@ -160,6 +160,7 @@ async def browser_rag(request: BrowserRagRequest):
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
     except Exception as e:
+        logging.error(f"Error processing browser RAG: {str(e)} \n{traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing browser RAG: {str(e)}"
@@ -183,6 +184,7 @@ async def database_rag(request: DatabaseRagRequest):
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
     except Exception as e:
+        logging.error(f"Error processing database RAG: {str(e)} \n{traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing database RAG: {str(e)}"
@@ -205,6 +207,7 @@ async def clear_conversation(request: ClearConversationRequest):
             return {"message": "No conversation found with this session ID"}
     
     except Exception as e:
+        logging.error(f"Error clearing conversation: {str(e)} \n{traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error clearing conversation: {str(e)}"
@@ -245,7 +248,7 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
     except HTTPException as e:
         raise
     except Exception as e:
-        logging.error(f"Error getting profile: {str(e)}")
+        logging.error(f"Error getting profile: {str(e)} \n{traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting profile: {str(e)}"
@@ -330,7 +333,7 @@ async def update_profile(profile: UserProfile):
         raise
     except Exception as e:
         # Include the traceback in the error detail
-        logging.error(f"Error updating profile: {str(e)}")
+        logging.error(f"Error updating profile: {str(e)} \n{traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating profile: {str(e)}"
