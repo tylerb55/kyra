@@ -15,6 +15,7 @@ python-dotenv>=1.0.0
 
 # Database
 supabase>=1.0.3
+vecs
 psycopg2-binary>=2.9.6
 
 # LlamaIndex and AI dependencies
