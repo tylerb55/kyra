@@ -245,6 +245,7 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
     except HTTPException as e:
         raise
     except Exception as e:
+        logging.error(f"Error getting profile: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting profile: {str(e)}"
@@ -329,11 +330,10 @@ async def update_profile(profile: UserProfile):
         raise
     except Exception as e:
         # Include the traceback in the error detail
-        tb = traceback.format_exc()
-        print(f"Error updating profile: {str(e)}\n{tb}")
+        logging.error(f"Error updating profile: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating profile: {str(e)}\nTraceback: {tb}"
+            detail=f"Error updating profile: {str(e)}"
         )
 
 @app.get("/")
