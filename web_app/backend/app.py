@@ -225,11 +225,11 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
             )
             
         # Set default environment variables
-        os.environ["name"] = profile["name"]
+        os.environ["username"] = profile["username"]
         os.environ["age"] = profile["age"]
         os.environ["gender"] = profile["gender"]
         os.environ["diagnosis"] = profile["diagnosis"]
-        os.environ["medication"] = profile["medication"]
+        os.environ["prescription"] = profile["prescription"]
         
         return UserProfile(
             id=id,
@@ -307,11 +307,11 @@ async def update_profile(profile: UserProfile):
         print("Update response:", update_response)
         
         # Update environment variables
-        os.environ["name"] = profile_data["name"]
+        os.environ["username"] = profile_data["username"]
         os.environ["age"] = profile_data["age"]
         os.environ["gender"] = profile_data["gender"]
         os.environ["diagnosis"] = profile_data["diagnosis"]
-        os.environ["medication"] = profile_data["medication"]
+        os.environ["prescription"] = profile_data["prescription"]
         
         # Return the updated profile with the user_id field
         return UserProfile(
