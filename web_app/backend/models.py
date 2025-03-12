@@ -34,7 +34,7 @@ class ClearConversationRequest(BaseModel):
 
 class RagResponse(BaseModel):
     answer: str  
-    source: Optional[List[Dict[str, str]]] = None
+    source: Optional[List[str]] = None
     session_id: Optional[str] = None
 class UserProfile(BaseModel):
     id: str
