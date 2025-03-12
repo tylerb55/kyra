@@ -229,7 +229,7 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
             
         # Set default environment variables
         os.environ["username"] = profile["username"]
-        os.environ["age"] = profile["age"]
+        os.environ["age"] = str(profile["age"])
         os.environ["gender"] = profile["gender"]
         os.environ["diagnosis"] = profile["diagnosis"]
         os.environ["prescription"] = profile["prescription"]
@@ -311,7 +311,7 @@ async def update_profile(profile: UserProfile):
         
         # Update environment variables
         os.environ["username"] = profile_data["username"]
-        os.environ["age"] = profile_data["age"]
+        os.environ["age"] = str(profile_data["age"])
         os.environ["gender"] = profile_data["gender"]
         os.environ["diagnosis"] = profile_data["diagnosis"]
         os.environ["prescription"] = profile_data["prescription"]
