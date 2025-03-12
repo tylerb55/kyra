@@ -86,6 +86,7 @@ def format_context_from_nodes(nodes: List[NodeWithScore]) -> str:
     for i, node in enumerate(nodes):
         context_str += f"Document {i+1}:\n{node.node.text}\n\n"
         # add source details to the source_details list if the source is not already in the list
-        if f"[{i}] Title: {node.node.metadata['title']}, Source: {node.node.metadata['url']}, Author: {node.node.metadata['author']}\n" not in source_details:
-            source_details.append(f"[{i}] Title: {node.node.metadata['title']}, Source: {node.node.metadata['url']}, Author: {node.node.metadata['author']}\n")
+        target_dict = {"Title": str(node.node.metadata['title']), "Source": str(node.node.metadata['url']), "Author": str(node.node.metadata['author'])}
+        if target_dict not in source_details:
+            source_details.append(target_dict)
     return context_str, source_details

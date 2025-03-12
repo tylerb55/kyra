@@ -14,5 +14,7 @@ def format_context_from_records(records) -> str:
             # Extract text from the record
             text = record[2].get('text', str(record))
             context_str += f"Document {i+1}:\n{text}\n\n"
-            source_details.append(f"[{i}] Source: {record[2]['source']}, Author: {record[2]['author']}\n")
+            target_dict = {"Title": str(record[2]['title']), "Source": str(record[2]['source']), "Author": str(record[2]['author'])}
+            if target_dict not in source_details:
+                source_details.append(target_dict)
     return context_str, source_details

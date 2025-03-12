@@ -86,8 +86,10 @@ const Chat = () => {
       };
 
       const source = response.data.source;
-      const sourceString = source.map((item: { source: string; author: string }) => `${item.source} by ${item.author}`).join('\n');
-
+      const sourceString = source.map((item: { title: string; source: string; author: string }, index: number) => 
+        `[${index + 1}] ${item.title} ${item.source} by ${item.author}`
+      ).join('\n');
+      
       const sourceMessage: Message = {
         id: generateId(),
         text: sourceString,
@@ -112,7 +114,9 @@ const Chat = () => {
       };
 
       const source = response.data.source;
-      const sourceString = source.map((item: { source: string; author: string }) => `${item.source} by ${item.author}`).join('\n');
+      const sourceString = source.map((item: { title: string; source: string; author: string }, index: number) => 
+        `[${index + 1}] ${item.title} ${item.source} by ${item.author}`
+      ).join('\n');
 
       const sourceMessage: Message = {
         id: generateId(),
