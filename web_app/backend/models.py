@@ -32,9 +32,13 @@ class ClearConversationRequest(BaseModel):
     session_id: str
     conversation_name: Optional[str] = None
 
+class Source(BaseModel):
+    title: str
+    source: str
+    author: str
 class RagResponse(BaseModel):
     answer: str  
-    source: Optional[List[Dict[str,str,str]]] = None
+    source: Optional[List[Source]] = None
     session_id: Optional[str] = None
 class UserProfile(BaseModel):
     id: str
