@@ -155,7 +155,7 @@ async def browser_rag(request: BrowserRagRequest):
         context, source_details = format_context_from_nodes(retrieved_nodes)
         
         # Generate response
-        answer = answer_query_with_context(request.query, context, memory)
+        answer = answer_query_with_context(request.query, context, memory, username=os.getenv("username"), age=os.getenv("age"), gender=os.getenv("gender"), diagnosis=os.getenv("diagnosis"), prescription=os.getenv("prescription"))
         
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
@@ -179,7 +179,7 @@ async def database_rag(request: DatabaseRagRequest):
         context, source_details = format_context_from_records(retrieved_records)
         
         # Generate response
-        answer = answer_query_with_context(request.query, context, memory)
+        answer = answer_query_with_context(request.query, context, memory, username=os.getenv("username"), age=os.getenv("age"), gender=os.getenv("gender"), diagnosis=os.getenv("diagnosis"), prescription=os.getenv("prescription"))
         
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
@@ -226,13 +226,13 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Profile not found"
             )
-            
-        # Set default environment variables
-        os.environ["username"] = profile["username"]
-        os.environ["age"] = str(profile["age"])
-        os.environ["gender"] = profile["gender"]
-        os.environ["diagnosis"] = profile["diagnosis"]
-        os.environ["prescription"] = profile["prescription"]
+        if profile:
+            # Set default environment variables
+            os.environ["username"] = profile["username"]
+            os.environ["age"] = str(profile["age"])
+            os.environ["gender"] = profile["gender"]
+            os.environ["diagnosis"] = profile["diagnosis"]
+            os.environ["prescription"] = profile["prescription"]
         
         return UserProfile(
             id=id,
@@ -309,12 +309,13 @@ async def update_profile(profile: UserProfile):
         update_response = supabase_client.table("users").update(profile_data).eq("id", user_id).execute()
         print("Update response:", update_response)
         
-        # Update environment variables
-        os.environ["username"] = profile_data["username"]
-        os.environ["age"] = str(profile_data["age"])
-        os.environ["gender"] = profile_data["gender"]
-        os.environ["diagnosis"] = profile_data["diagnosis"]
-        os.environ["prescription"] = profile_data["prescription"]
+        if update_response.data:
+            # Update environment variables
+            os.environ["username"] = profile_data["username"]
+            os.environ["age"] = str(profile_data["age"])
+            os.environ["gender"] = profile_data["gender"]
+            os.environ["diagnosis"] = profile_data["diagnosis"]
+            os.environ["prescription"] = profile_data["prescription"]
         
         # Return the updated profile with the user_id field
         return UserProfile(

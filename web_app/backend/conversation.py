@@ -36,7 +36,7 @@ def save_conversation(session_id, conversation_name=None):
     )
     return True
 
-def answer_query_with_context(query, context, memory):
+def answer_query_with_context(query, context, memory, username, age, gender, diagnosis, prescription):
     """Answer a query using RAG approach with provided context and chat history."""
     # Create system prompt with context
     system_prompt = f"""You are a expert medical professional. You are tasked with giving
@@ -51,7 +51,7 @@ def answer_query_with_context(query, context, memory):
     If a technical term is necessary, provide a simple definition.
     Assume the patient has no medical background and aim to educate without overwhelming.
     
-    You are speaking with {os.getenv("name")}. A {os.getenv("age")} year old {os.getenv("gender")} diagnosed with {os.getenv("diagnosis")} and prescribed {os.getenv("medication")}.
+    You are speaking with {username}. A {age} year old {gender} diagnosed with {diagnosis} and prescribed {prescription}.
 
     Context:
     {context}
