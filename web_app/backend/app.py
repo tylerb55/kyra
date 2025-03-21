@@ -358,6 +358,8 @@ async def liveness_check():
             return {"status": "scaledToZero", "active": False}
         elif state == "paused":
             return {"status": "paused", "active": False}
+        elif state == "initializing":
+            return {"status": "initializing", "active": False}
         elif state == "running":
             return {"status": "running", "active": True}
         else:

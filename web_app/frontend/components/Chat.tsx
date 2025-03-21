@@ -45,6 +45,10 @@ const Chat = () => {
       try {
         const response = await axios.get('https://kyra-backend.onrender.com/liveness-check');
         setIsLlmActive(response.data.active);
+        // If LLM is not active and not initializing, scale up
+        if (!response.data.active && response.data.status !== "initializing") {
+          await axios.get('https://kyra-backend.onrender.com/scale-up');
+        }
       } catch (error) {
         console.error('Error checking LLM status:', error);
         setIsLlmActive(false);
