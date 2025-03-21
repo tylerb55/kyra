@@ -431,9 +431,9 @@ async def get_system_prompt():
         )
 
 @app.post("/system-prompt")
-async def update_system_prompt(system_prompt: SystemPromptData): 
+async def update_system_prompt(system_prompt: str = Query(..., description="The system prompt to set")): 
     try:
-        os.environ["system_prompt"] = system_prompt.system_prompt
+        os.environ["system_prompt"] = system_prompt
         return {"system_prompt": os.getenv("system_prompt")}
     except Exception as e:
         logging.error(f"Error updating system prompt: {str(e)} \n{traceback.format_exc()}")
