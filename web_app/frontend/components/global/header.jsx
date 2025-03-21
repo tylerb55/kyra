@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts';
 import logo from '@/public/logo.png';
+import axios from 'axios';
 
 function Header() {
   const { logout } = useAuth();
@@ -16,6 +17,11 @@ function Header() {
     router.push('/')
   };
 
+  // Scale down LLM
+  const scaleDownLlm = async () => {
+    await axios.post('https://kyra-backend.onrender.com/scale-to-zero');
+  };
+
   return (
     <header className="header">
       <Link href="/landing">
@@ -24,7 +30,9 @@ function Header() {
       <div className="header-links">
         <Link href="/chat">Chat</Link>
         <Link href="/profile">Profile</Link>
+        <Link href="/system-prompt">System Prompt</Link>
         <Link href="#" onClick={handleLogout}>Log Out</Link>
+        <Link href="#" onClick={scaleDownLlm}>Scale Down LLM</Link>
       </div>
     </header>
   );

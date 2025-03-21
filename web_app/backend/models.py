@@ -49,3 +49,6 @@ class UserProfile(BaseModel):
     gender: Optional[str] = None
     ethnicity: Optional[str] = None
     updated_at: Optional[str] = None
+
+class SystemPromptData(BaseModel):
+    system_prompt: str

@@ -7,7 +7,7 @@ import jwt
 import os
 from dotenv import load_dotenv
 import traceback
-
+import requests
 # Import local modules
 from models import *
 from browser_rag import query_browser, create_vector_index, browser_retrieve, format_context_from_nodes
@@ -339,6 +339,109 @@ async def update_profile(profile: UserProfile):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating profile: {str(e)}"
         )
+
+@app.get("/liveness-check")
+async def liveness_check():
+    base_url = "https://api.endpoints.huggingface.cloud"
+    namespace = "tylerbunsie"
+    name = "qwen2-5-7b-instruct"
+    key = os.getenv("HUGGINGFACE_API_KEY")
+    headers = {
+        "Authorization": f"Bearer {key}"
+    }
+    try:
+        response = requests.get(f"{base_url}/v2/endpoint/{namespace}/{name}", headers=headers)
+        print(response.json())
+        state = response.json()["status"]["state"]
+        
+        if state == "scaledToZero":
+            return {"status": "scaledToZero", "active": False}
+        elif state == "paused":
+            return {"status": "paused", "active": False}
+        elif state == "running":
+            return {"status": "running", "active": True}
+        else:
+            return {"status": "unknown", "active": False}
+    except Exception as e:
+        print(e)
+        return {"status": "unknown", "active": False}
+
+@app.get("/scale-up")
+async def scale_up():
+    llm = OpenAI(
+        base_url="https://pn3bt077dimy5mo9.us-east-1.aws.endpoints.huggingface.cloud/v1/",
+        api_key=os.environ["HUGGINGFACE_API_KEY"]
+    )
+    
+    messages = [{"role": "system", "content": "Scaling up the llm endpoint. Respond with OK"}]  
+    response = llm.chat.completions.create(
+        model="tgi",  # Using the model specified in your environment
+        messages=messages,
+        max_tokens=5
+    )
+    return True
+
+@app.get("/scale-to-zero")
+async def scale_to_zero():
+    """Call the endpoint to scale to zero"""
+    base_url = "https://api.endpoints.huggingface.cloud"
+    namespace = "tylerbunsie"
+    name = "qwen2-5-7b-instruct"
+    key = os.getenv("HUGGINGFACE_API_KEY")
+    headers = {
+        "Authorization": f"Bearer {key}"
+    }
+    
+    try:
+        response = requests.post(f"{base_url}/v2/endpoint/{namespace}/{name}/scale-to-zero", headers=headers)
+        print(response.json())
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+def make_system_prompt():
+    return f"""You are a expert medical professional. You are tasked with giving
+    safe and accurate medical information. The context provided to you is directly from your knowledge base.
+    If the user asks a medical question and the context does not contain relevant information, you should say 
+    "I can't find that information in my knowledge base." Then try to give a general answer.
+    
+    Provide concise, and professional language while maintaining a warm and empathetic approach.
+    Do not use sorrow or pitiful language. Do not apologise in the response.
+    Do not bring up death, short survival time, or that there is no cure unless the user specifically asks about these.
+    Offer analogies or examples when helpful but be sensitive and considerate to the severity of the patient’s situation - 
+    contextualise if a response could be interpreted as belittling the user's experience.
+    If a technical term is necessary, provide a simple definition.
+    Assume the patient has no medical background and aim to educate without overwhelming.
+    
+    You are speaking with {os.getenv('username')}. A {os.getenv('age')} year old {os.getenv('gender')} diagnosed with {os.getenv('diagnosis')} and prescribed {os.getenv('prescription')}."""
+
+
+@app.get("/system-prompt")
+async def get_system_prompt():
+    try:
+        if os.getenv("system_prompt") is None:
+            os.environ["system_prompt"] = make_system_prompt()
+        return {"system_prompt": os.getenv("system_prompt")}
+    except Exception as e:
+        logging.error(f"Error getting system prompt: {str(e)} \n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting system prompt: {str(e)}"
+        )
+
+@app.post("/system-prompt")
+async def update_system_prompt(system_prompt: SystemPromptData): 
+    try:
+        os.environ["system_prompt"] = system_prompt.system_prompt
+        return {"system_prompt": os.getenv("system_prompt")}
+    except Exception as e:
+        logging.error(f"Error updating system prompt: {str(e)} \n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating system prompt: {str(e)}"
+        )
+
 
 @app.get("/")
 async def root():

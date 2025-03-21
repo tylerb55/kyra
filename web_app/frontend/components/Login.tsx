@@ -9,6 +9,7 @@ import "../styles/App.css";
 import { useAuth } from "@/app/contexts";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
+import axios from "axios";
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -23,6 +24,11 @@ const Login = () => {
     const [statusHolder, setStatusHolder] = useState('message');
 
     const { login } = useAuth();
+
+    // Scale up LLm
+    const scaleUpLlm = async () => {
+        await axios.get('https://kyra-backend.onrender.com/scale-up');
+    };
 
     const loginUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,6 +48,7 @@ const Login = () => {
             // Store user ID in auth context
             if (data.user && data.user.id && data.session?.access_token) {
                 login(data.session.access_token, data.user.id);
+                scaleUpLlm();
                 router.push('/chat');
             }
         } catch (error) {
@@ -143,7 +150,10 @@ const Login = () => {
                         <button 
                             type="button" 
                             className="btn flex" 
-                            onClick={() => router.push('/chat')}
+                            onClick={() => {
+                                router.push('/chat');
+                                scaleUpLlm();
+                            }}
                             style={{ marginTop: '10px' }}
                         >
                             <span>Go to Chat</span>

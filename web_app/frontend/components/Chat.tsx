@@ -35,6 +35,33 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sessionId, setSessionId] = useState(null);
+  const [isLlmActive, setIsLlmActive] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+
+  // Check if the LLM is active
+  useEffect(() => {
+    const checkLlmStatus = async () => {
+      setIsCheckingStatus(true);
+      try {
+        const response = await axios.get('https://kyra-backend.onrender.com/liveness-check');
+        setIsLlmActive(response.data.active);
+      } catch (error) {
+        console.error('Error checking LLM status:', error);
+        setIsLlmActive(false);
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+
+    // Check immediatly on component mount
+    checkLlmStatus();
+
+    // Check every 15 seconds
+    const intervalId = setInterval(checkLlmStatus, 15000);
+
+    // Clear interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -189,7 +216,19 @@ const Chat = () => {
 
   return (
     
-    <div className="flex h-[80vh] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+    <div className={`flex h-[80vh] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg ${!isLlmActive ? 'opacity-70 pointer-events-none' : ''}`}>
+      {/* Overlay if LLM is inactive */}
+      {!isLlmActive && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-auto">
+          <div className="bg-gray-800 bg-opacity-75 text-white px-6 py-4 rounded-lg shadow-lg">
+            {isCheckingStatus ? (
+              <p>Checking LLM status...</p>
+            ) : (
+              <p>LLM service is currently scaling up. Please wait...</p>
+            )}
+          </div>
+        </div>
+      )}
       {/* Sidebar */}
       <div 
         className="transition-all duration-300 overflow-hidden border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 h-full"
@@ -328,7 +367,7 @@ const Chat = () => {
               <textarea 
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Ask anything" 
+                placeholder={isLlmActive ? 'Send a message' : 'LLM service unavailable'} 
                 rows={1}
                 className="w-full p-4 pr-16 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none min-h-[56px] max-h-[200px] overflow-y-auto"
                 style={{ height: 'auto' }}
@@ -337,17 +376,19 @@ const Chat = () => {
                   target.style.height = 'auto';
                   target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
                 }}
+                disabled={!isLlmActive}
               />
               <button 
                 type="submit"
                 className="absolute right-3 bottom-3 p-2 rounded-md bg-purple-500 text-white disabled:opacity-50"
-                disabled={inputText.trim() === ''}
+                disabled={!isLlmActive || inputText.trim() === ''}
               >
                 <Send className="h-5 w-5" />
               </button>
             </form>
             <p className="text-xs text-center mt-2 text-gray-500">
-              Chat Assistant can make mistakes. Check important info.
+              {isLlmActive ? 'Chat Assistant can make mistakes. Check important info.' 
+              : 'LLM service unavailable. Please wait...'}
             </p>
           </div>
         </div>
