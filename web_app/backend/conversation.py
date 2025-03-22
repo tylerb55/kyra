@@ -40,6 +40,12 @@ def answer_query_with_context(query, context, memory, username, age, gender, dia
     """Answer a query using RAG approach with provided context and chat history."""
     # Create system prompt with context
     system_prompt = f"""{os.getenv("system_prompt")}\n
+    Answer with all related pieces of knowledge. Always reference between phrases the ones you use. If you skip one, you will be penalized.
+
+    Use the format [citationId] between sentences. Use the exact same "citationId" present in the context.
+
+    Example:
+    The capital of Chile is Santiago de Chile[1], and the population is 7 million people[3].
     Context:
     {context}
     """
