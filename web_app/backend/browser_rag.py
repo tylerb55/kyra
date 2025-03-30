@@ -83,10 +83,34 @@ def format_context_from_nodes(nodes: List[NodeWithScore]) -> str:
     """Format retrieved nodes into a context string for the LLM."""
     context_str = ""
     source_details = []
+    
+    # Create a dictionary to track unique sources and assign IDs
+    source_to_id = {}
+    current_source_id = 1
+    
     for i, node in enumerate(nodes):
-        context_str += f"Document {i+1}:\n{node.node.text}\n\n"
-        # add source details to the source_details list if the source is not already in the list
-        target_dict = {"title": str(node.node.metadata['title']), "source": str(node.node.metadata['url']), "author": str(node.node.metadata['author'])}
+        source = str(node.node.metadata['url'])
+        title = str(node.node.metadata['title'])
+        title_source = f"Title: {title}\nSource: {source}"
+        
+        # Assign source ID if not already assigned
+        if title_source not in source_to_id:
+            source_to_id[title_source] = current_source_id
+            current_source_id += 1
+        
+        source_id = source_to_id[title_source]
+        
+        # Add text with source ID to context string
+        context_str += f"citationID: [{source_id}]\nTitle: {title}\nSource: {source}\n{node.node.text}\n\n"
+        
+        # Add source details if not already added
+        target_dict = {
+            "id": source_id,
+            "title": title, 
+            "source": source, 
+            "author": str(node.node.metadata['author'])
+        }
         if target_dict not in source_details:
             source_details.append(target_dict)
+    
     return context_str, source_details

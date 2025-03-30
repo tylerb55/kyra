@@ -6,6 +6,7 @@ import "../styles/App.css";
 import axios from 'axios';
 import { Plus, Menu, Send } from "lucide-react";
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
 // Define message types
 interface Message {
   id: string;
@@ -37,17 +38,75 @@ const Chat = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isLlmActive, setIsLlmActive] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+  const [isTranscriptSaved, setIsTranscriptSaved] = useState(true);
+
+  // function to save transcript
+  const saveTranscript = async (chatMessages: Message[], title: string) => {
+    console.log(JSON.stringify({
+      id: sessionId || "",
+      title: title,
+      messages: chatMessages,
+      timestamp: new Date().toISOString(),
+      mode: mode
+    }))
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/save-transcript`, {
+        id: sessionId || "",
+        title: title,
+        messages: chatMessages,
+        timestamp: new Date().toISOString(),
+        mode: mode
+      });
+      setIsTranscriptSaved(true);
+    } catch (error) {
+      console.error('Error saving transcript:', error);
+    }
+  };
+
+  // Mark transcript as unsaved when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setIsTranscriptSaved(false);
+    }
+  }, [messages]);
+
+  // Save transcript on page unload if it is unsaved
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!isTranscriptSaved && messages.length > 0) {
+        const firstUserMessage = messages.find(msg => msg.sender === 'user');
+        const chatTitle = firstUserMessage 
+          ? firstUserMessage.text.substring(0, 30) + (firstUserMessage.text.length > 30 ? '...' : '')
+          : 'New Chat';
+
+        // Use synchronous API to ensure it runs before page unload
+        navigator.sendBeacon(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/save-transcript`,
+          JSON.stringify({
+            id: sessionId || "",
+            title: chatTitle,
+            messages: [...messages],
+            timestamp: new Date().toISOString(),
+            mode: mode
+          })
+        );
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [messages, isTranscriptSaved, mode, sessionId]);
 
   // Check if the LLM is active
   useEffect(() => {
     const checkLlmStatus = async () => {
       setIsCheckingStatus(true);
       try {
-        const response = await axios.get('https://kyra-backend.onrender.com/liveness-check');
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/liveness-check`);
         setIsLlmActive(response.data.active);
         // If LLM is not active and not initializing, scale up
         if (!response.data.active && response.data.status !== "initializing") {
-          await axios.get('https://kyra-backend.onrender.com/scale-up');
+          await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
         }
       } catch (error) {
         console.error('Error checking LLM status:', error);
@@ -102,7 +161,7 @@ const Chat = () => {
     
     // Make a request to the backend
     if (mode === 'RAG') {
-      const response = await axios.post('https://kyra-backend.onrender.com/database-rag', {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/database-rag`, {
         "query": inputText,
         "session_id": sessionId
       });
@@ -118,7 +177,7 @@ const Chat = () => {
 
       const source = response.data.source;
       const sourceString = source.map((item: { title: string; source: string; author: string }, index: number) => 
-        `[${index + 1}] ${item.title} ${item.source} by ${item.author}`
+        `[${index + 1}] ${item.title} ${item.source}`
       ).join('\n');
       
       const sourceMessage: Message = {
@@ -130,7 +189,7 @@ const Chat = () => {
 
       setMessages(prev => [...prev, assistantMessage, sourceMessage]);
     } else if (mode === 'Browser') {
-      const response = await axios.post('https://kyra-backend.onrender.com/browser-rag', {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/browser-rag`, {
         "query": inputText,
         "session_id": sessionId
       });
@@ -168,6 +227,9 @@ const Chat = () => {
       const chatTitle = firstUserMessage 
         ? firstUserMessage.text.substring(0, 30) + (firstUserMessage.text.length > 30 ? '...' : '')
         : 'New Chat';
+
+      // Save transcript
+      saveTranscript(messages, chatTitle);
       
       // Save current chat
       const newSavedChat: SavedChat = {
@@ -182,6 +244,7 @@ const Chat = () => {
     
     // Clear current chat
     setMessages([]);
+    setSessionId(null);
   };
 
   // Load a saved chat
@@ -353,7 +416,13 @@ const Chat = () => {
                       </div>
                     )}
                     <div className={`max-w-[75%] ${message.sender === 'user' ? 'bg-gray-100 dark:bg-gray-700 rounded-lg p-4' : ''}`}>
-                      <p className="text-gray-800 dark:text-gray-200 font-sans text-base leading-relaxed px-2 py-1">{message.text}</p>
+                      {message.sender === 'assistant' ? (
+                        <div className="markdown-content text-gray-800 dark:text-gray-200 font-sans text-base leading-relaxed px-2 py-1">
+                          <ReactMarkdown>{message.text}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-gray-800 dark:text-gray-200 font-sans text-base leading-relaxed px-2 py-1">{message.text}</p>
+                      )}
                     </div>
                   </div>
                 </div>

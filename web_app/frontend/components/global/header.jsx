@@ -29,6 +29,7 @@ function Header() {
       </Link>
       <div className="header-links">
         <Link href="/chat">Chat</Link>
+        <Link href="/insights">Insights</Link>
         <Link href="/profile">Profile</Link>
         <Link href="/system-prompt">System Prompt</Link>
         <Link href="#" onClick={handleLogout}>Log Out</Link>

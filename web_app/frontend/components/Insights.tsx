@@ -1,204 +1,122 @@
 'use client';
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bar, Line, Pie } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import React, { useState, useEffect } from 'react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  LineChart, Line, PieChart, Pie, Cell 
+} from 'recharts';
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-// Dummy data for the charts
-const dummyTimelineData = {
-  dates: ['Jan 1', 'Jan 8', 'Jan 15', 'Jan 22', 'Jan 29', 'Feb 5', 'Feb 12'],
-  symptoms: {
-    'Headache': [3, 5, 2, 4, 3, 1, 2],
-    'Fatigue': [4, 4, 3, 5, 4, 3, 2],
-    'Nausea': [1, 0, 2, 3, 1, 0, 0],
-    'Joint Pain': [2, 3, 4, 4, 3, 2, 1]
-  }
-};
-
-const dummyFrequencyData = {
-  symptoms: ['Headache', 'Fatigue', 'Nausea', 'Joint Pain', 'Dizziness', 'Fever'],
-  frequencies: [28, 35, 15, 22, 8, 12]
-};
-
-const dummyTopicData = {
-  topics: ['Medication', 'Symptoms', 'Diet', 'Exercise', 'Sleep', 'Mental Health'],
-  counts: [25, 40, 15, 10, 8, 12]
-};
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const Insights = () => {
-  const [activeTab, setActiveTab] = useState('timeline');
-
-  // Prepare chart data
-  const timelineChartData = {
-    labels: dummyTimelineData.dates,
-    datasets: Object.entries(dummyTimelineData.symptoms).map(([symptom, values], index) => ({
-      label: symptom,
-      data: values,
-      borderColor: getColor(index),
-      backgroundColor: getColor(index, 0.2),
-      tension: 0.3,
-    })),
-  };
-
-  const frequencyChartData = {
-    labels: dummyFrequencyData.symptoms,
-    datasets: [{
-      label: 'Frequency',
-      data: dummyFrequencyData.frequencies,
-      backgroundColor: dummyFrequencyData.symptoms.map((_, i) => getColor(i, 0.7)),
-      borderColor: dummyFrequencyData.symptoms.map((_, i) => getColor(i)),
-      borderWidth: 1,
-    }],
-  };
-
-  const topicChartData = {
-    labels: dummyTopicData.topics,
-    datasets: [{
-      data: dummyTopicData.counts,
-      backgroundColor: dummyTopicData.topics.map((_, i) => getColor(i, 0.7)),
-      borderColor: dummyTopicData.topics.map((_, i) => getColor(i)),
-      borderWidth: 1,
-    }],
-  };
-
-  // Helper function to generate colors
-  function getColor(index: number, alpha = 1) {
-    const colors = [
-      `rgba(255, 99, 132, ${alpha})`,
-      `rgba(54, 162, 235, ${alpha})`,
-      `rgba(255, 206, 86, ${alpha})`,
-      `rgba(75, 192, 192, ${alpha})`,
-      `rgba(153, 102, 255, ${alpha})`,
-      `rgba(255, 159, 64, ${alpha})`,
-      `rgba(199, 199, 199, ${alpha})`,
-      `rgba(83, 102, 255, ${alpha})`,
-      `rgba(40, 159, 64, ${alpha})`,
-      `rgba(210, 199, 199, ${alpha})`,
-    ];
-    return colors[index % colors.length];
-  }
-
-  return (
-    <div className="w-full max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Patient Insights</h1>
+  const [topicData, setTopicData] = useState([]);
+  const [symptomData, setSymptomData] = useState([]);
+  const [knowledgeGapData, setKnowledgeGapData] = useState([]);
+  const [ragPerformance, setRagPerformance] = useState({ by_source: [], over_time: [] });
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+    
+    // Fetch data from your API endpoints
+    const fetchData = async () => {
+      const topicsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/insights/conversation-topics`);
+      const topicsData = await topicsResponse.json();
+      setTopicData(topicsData.topics);
       
-      <Tabs defaultValue="timeline" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger value="timeline">Symptom Timeline</TabsTrigger>
-          <TabsTrigger value="frequency">Symptom Frequency</TabsTrigger>
-          <TabsTrigger value="topics">Topics</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="timeline">
-          <Card>
-            <CardHeader>
-              <CardTitle>Symptom Timeline</CardTitle>
-              <CardDescription>Track how symptoms have changed over time</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[400px]">
-              <Line 
-                data={timelineChartData} 
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      title: {
-                        display: true,
-                        text: 'Severity'
-                      }
-                    },
-                    x: {
-                      title: {
-                        display: true,
-                        text: 'Date'
-                      }
-                    }
-                  }
-                }}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="frequency">
-          <Card>
-            <CardHeader>
-              <CardTitle>Symptom Frequency</CardTitle>
-              <CardDescription>How often each symptom occurs</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[400px]">
-              <Bar 
-                data={frequencyChartData} 
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      title: {
-                        display: true,
-                        text: 'Frequency'
-                      }
-                    }
-                  }
-                }}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="topics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Topics Distribution</CardTitle>
-              <CardDescription>Distribution of discussion topics</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[400px] flex justify-center">
-              <div className="w-3/4 h-full">
-                <Pie 
-                  data={topicChartData} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'right',
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      const symptomsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/insights/symptoms`);
+      const symptomsData = await symptomsResponse.json();
+      setSymptomData(symptomsData.symptoms);
+      
+      const gapsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/insights/knowledge-gaps`);
+      const gapsData = await gapsResponse.json();
+      setKnowledgeGapData(gapsData.knowledge_gaps);
+      
+      const ragResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/insights/rag-performance`);
+      const ragData = await ragResponse.json();
+      setRagPerformance(ragData);
+    };
+    
+    fetchData();
+  }, []);
+  
+  if (!isClient) {
+    return <div className="insights-container"><h1>Loading...</h1></div>;
+  }
+  
+  return (
+    <div className="insights-container">
+      <h1>Conversation Insights</h1>
+      
+      <div className="chart-section">
+        <h2>Top Conversation Topics</h2>
+        <BarChart width={600} height={300} data={topicData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="topic" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="count" fill="#8884d8" />
+        </BarChart>
+      </div>
+      
+      <div className="chart-section">
+        <h2>Common Symptoms & Problems</h2>
+        <PieChart width={400} height={400}>
+          <Pie
+            data={symptomData}
+            cx={200}
+            cy={200}
+            labelLine={true}
+            outerRadius={150}
+            fill="#8884d8"
+            dataKey="count"
+            nameKey="symptom"
+            label={({symptom, percent}: {symptom: string, percent: number}) => `${symptom}: ${(percent * 100).toFixed(0)}%`}
+          >
+            {symptomData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </div>
+      
+      <div className="chart-section">
+        <h2>Knowledge Gaps</h2>
+        <BarChart width={600} height={300} data={knowledgeGapData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="gap" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="count" fill="#82ca9d" />
+        </BarChart>
+      </div>
+      
+      <div className="chart-section">
+        <h2>RAG Performance Over Time</h2>
+        <LineChart width={600} height={300} data={ragPerformance.over_time}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="cosine_distance" stroke="#ff7300" />
+        </LineChart>
+      </div>
+      
+      <div className="chart-section">
+        <h2>RAG Performance by Source</h2>
+        <BarChart width={600} height={300} data={ragPerformance.by_source}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="source" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="avg_cosine_distance" fill="#8884d8" />
+          <Bar dataKey="query_count" fill="#82ca9d" />
+        </BarChart>
+      </div>
     </div>
   );
 };

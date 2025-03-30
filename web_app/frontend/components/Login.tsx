@@ -27,7 +27,7 @@ const Login = () => {
 
     // Scale up LLm
     const scaleUpLlm = async () => {
-        await axios.get('https://kyra-backend.onrender.com/scale-up');
+        await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
     };
 
     const loginUser = async (e: React.FormEvent) => {

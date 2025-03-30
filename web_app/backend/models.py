@@ -52,3 +52,15 @@ class UserProfile(BaseModel):
 
 class SystemPromptData(BaseModel):
     system_prompt: str
+    
+class Message(BaseModel):
+    id: str
+    text: str
+    sender: str
+    timestamp: str
+class TranscriptObject(BaseModel):
+    id: str
+    title: str
+    messages: List[Message]
+    timestamp: str
+    mode: str

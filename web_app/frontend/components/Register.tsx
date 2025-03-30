@@ -26,7 +26,7 @@ const Register = () => {
     const { login } = useAuth();
 
     const scaleUpLlm = async () => {
-        await axios.get('https://kyra-backend.onrender.com/scale-up');
+        await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
     };
 
     const createUser = async (e: React.FormEvent) => {

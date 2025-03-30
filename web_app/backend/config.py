@@ -49,6 +49,20 @@ conversations = vx.get_or_create_collection(
     dimension=1  # We're not using embeddings for this collection
 )
 
+documents = vx.get_or_create_collection(
+    name="documents",
+    adapter=Adapter(
+        [
+            TextEmbedding(model='BAAI/bge-base-en-v1.5'),
+        ]
+    )
+)
+
+documents.create_index(
+    method=vecs.IndexMethod.auto,
+    measure=vecs.IndexMeasure.cosine_distance,
+)
+
 # Global conversation memory
 # Using a dictionary to store conversations by session_id
 conversation_memories = {}

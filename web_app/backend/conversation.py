@@ -1,7 +1,11 @@
 import uuid
 from collections import deque
-from config import conversation_memories, conversations, llm
+from config import conversation_memories, conversations, llm, supabase_client
 import os
+import json
+import datetime
+from utils.helper_functions import extract_json_from_markdown
+import logging
 
 def get_or_create_memory(session_id: str = None):
     """Get existing memory or create a new one with optional session_id"""
@@ -14,7 +18,16 @@ def get_or_create_memory(session_id: str = None):
     return session_id, conversation_memories[session_id]
 
 def save_conversation(session_id, conversation_name=None):
-    """Save conversation to database"""
+    """
+    Save conversation to database with insights about topics, symptoms, and knowledge gaps
+    
+    Args:
+        session_id: The unique session identifier
+        conversation_name: Optional name for the conversation
+        
+    Returns:
+        Boolean indicating success
+    """
     if session_id not in conversation_memories:
         return False
     
@@ -22,19 +35,66 @@ def save_conversation(session_id, conversation_name=None):
     if not memory:
         return False
     
-    # Convert memory to a format suitable for storage
-    conversation_data = {
-        "messages": list(memory),
-        "name": conversation_name or f"Conversation-{session_id[:8]}"
-    }
+    # Create transcript
+    transcript = "\n".join([f"{msg['role']}: {msg['content']}" for msg in memory])
     
-    # Store in the conversations collection
-    conversations.upsert(
-        records=[
-            (session_id, None, {"conversation": conversation_data})
-        ]
-    )
-    return True
+    # Extract insights using LLM
+    full_conversation = "\n".join([f"{msg['role']}: {msg['content']}" for msg in memory])
+    
+    analysis_prompt = f"""
+    Analyze the following conversation and extract:
+    1. Main topics discussed (list up to 5)
+    2. Any symptoms or problems mentioned (list all)
+    3. Topics where the assistant lacked knowledge or couldn't provide a complete answer
+    
+    Format your response as JSON with the following structure:
+    {{
+        "topics": ["topic1", "topic2", ...],
+        "symptoms_problems": ["symptom1", "problem1", ...],
+        "knowledge_gaps": ["gap1", "gap2", ...]
+    }}
+    
+    Conversation:
+    {full_conversation}
+    """
+    
+    try:
+        # Generate analysis using the LLM
+        response = llm.chat.completions.create(
+            model="tgi",
+            messages=[{"role": "user", "content": analysis_prompt}]
+        )
+        
+        # Parse the JSON response
+        analysis = json.loads(extract_json_from_markdown(response.choices[0].message.content))
+        
+        # Insert or update the conversation transcript with insights
+        result = supabase_client.table("conversation_transcripts").upsert({
+            "session_id": session_id,
+            "conversation_name": conversation_name,
+            "transcript": transcript,
+            "topics": analysis.get("topics", []),
+            "symptoms_problems": analysis.get("symptoms_problems", []),
+            "knowledge_gaps": analysis.get("knowledge_gaps", []),
+            "username": os.getenv("username"),
+            "updated_at": datetime.datetime.now().isoformat()
+        }).execute()
+        
+        return True if result.data else False
+        
+    except Exception as e:
+        print(f"Error saving conversation with insights: {str(e)}")
+        
+        # Fallback: save just the transcript without insights
+        result = supabase_client.table("conversation_transcripts").upsert({
+            "session_id": session_id,
+            "conversation_name": conversation_name,
+            "transcript": transcript,
+            "username": os.getenv("username"),
+            "updated_at": datetime.datetime.now().isoformat()
+        }).execute()
+        
+        return True if result.data else False
 
 def answer_query_with_context(query, context, memory, username, age, gender, diagnosis, prescription):
     """Answer a query using RAG approach with provided context and chat history."""
@@ -45,7 +105,8 @@ def answer_query_with_context(query, context, memory, username, age, gender, dia
     Use the format [citationId] between sentences. Use the exact same "citationId" present in the context.
 
     Example:
-    The capital of Chile is Santiago de Chile[1], and the population is 7 million people[3].
+    The capital of Chile is Santiago de Chile [1], and the population is 7 million people [3].
+    
     Context:
     {context}
     """
