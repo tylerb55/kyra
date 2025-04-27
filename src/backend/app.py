@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
-import jwt
+#import jwt
 import os
 from dotenv import load_dotenv
 import traceback
@@ -24,9 +24,6 @@ load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(title="RAG API with Browser and Database Support")
-
-# Include insights router
-app.include_router(insights_router)
 
 # Configure CORS
 app.add_middleware(
@@ -99,11 +96,15 @@ async def database_rag(request: DatabaseRagRequest):
         # Get or create conversation memory
         session_id, memory = get_or_create_memory(request.session_id)
         
-        # Retrieve relevant documents from database
-        retrieved_records = db_retrieve(
-            request.query
-        )
-        context, source_details = format_context_from_records(retrieved_records)
+        try:
+            # Retrieve relevant documents from database
+            retrieved_records = db_retrieve(
+                request.query
+            )
+            context, source_details = format_context_from_records(retrieved_records)
+        except Exception as e:
+            context = "No context provided. Answering from your own knowledge."
+            source_details = []
         
         # Generate response
         answer = answer_query_with_context(request.query, context, memory, username=os.getenv("username"), age=os.getenv("age"), gender=os.getenv("gender"), diagnosis=os.getenv("diagnosis"), prescription=os.getenv("prescription"))
@@ -243,6 +244,7 @@ async def update_profile(profile: UserProfile):
             os.environ["gender"] = profile_data["gender"]
             os.environ["diagnosis"] = profile_data["diagnosis"]
             os.environ["prescription"] = profile_data["prescription"]
+            os.environ["system_prompt"] = make_system_prompt()
         
         # Return the updated profile with the user_id field
         return UserProfile(
@@ -339,7 +341,7 @@ def make_system_prompt():
     Keep the entire response in English.
     Do not use sorrow or pitiful language. Do not apologise in the response.
     Do not bring up death, short survival time, or that there is no cure unless the user specifically asks about these.
-    Offer analogies or examples when helpful but be sensitive and considerate to the severity of the patient’s situation - 
+    Offer analogies or examples when helpful but be sensitive and considerate to the severity of the patient's situation - 
     contextualise if a response could be interpreted as belittling the user's experience.
     If a technical term is necessary, provide a simple definition.
     Assume the patient has no medical background and aim to educate without overwhelming.
@@ -380,6 +382,8 @@ async def update_system_prompt(system_prompt: str = Query(..., description="The 
 async def root():
     return {"message": "RAG API is running. Use /browser-rag or /database-rag endpoints."}
 
+# Include insights router
+app.include_router(insights_router)
 
 if __name__ == "__main__":
     import uvicorn

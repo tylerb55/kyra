@@ -6,6 +6,30 @@ import json
 import datetime
 from utils.helper_functions import extract_json_from_markdown
 import logging
+from google import genai
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def gemini_response(prompt, model):
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    
+    response = client.models.generate_content(
+        model=model, contents=prompt
+    )
+    return response.text
+
+    
+def gpt_response(prompt, model):
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+    response = client.responses.create(
+        model=model,
+        instructions=os.environ("system_prompt"),
+        input=prompt,
+    )
+    return response.output_text
 
 def get_or_create_memory(session_id: str = None):
     """Get existing memory or create a new one with optional session_id"""
