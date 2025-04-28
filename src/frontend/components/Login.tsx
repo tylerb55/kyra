@@ -9,7 +9,7 @@ import "../styles/App.css";
 import { useAuth } from "@/app/contexts";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
-//import axios from "axios";
+import axios from "axios";
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -25,53 +25,89 @@ const Login = () => {
 
     const { login } = useAuth();
 
-    // Scale up LLm
-    //const scaleUpLlm = async () => {
-    //    await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
-    //};
-
     const loginUser = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoginStatus('Logging in...');
+        setStatusHolder('showMessage');
+
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
             });
 
-            if (error) {
+            if (authError) {
                 setLoginStatus('Invalid email or password');
-                throw error;
-            } else {
-                setLoginStatus('Login successful');
+                setStatusHolder('showMessage error');
+                setTimeout(() => setStatusHolder('message'), 3000);
+                throw authError;
             }
 
-            // Store user ID in auth context
-            if (data.user && data.user.id && data.session?.access_token) {
-                login(data.session.access_token, data.user.id);
-                //scaleUpLlm();
-                router.push('/chat');
+            if (!authData.user || !authData.user.id || !authData.session?.access_token) {
+                setLoginStatus('Login failed: Missing user data.');
+                setStatusHolder('showMessage error');
+                setTimeout(() => setStatusHolder('message'), 3000);
+                throw new Error('Missing user data after successful sign in.');
             }
+
+            const userId = authData.user.id;
+            const accessToken = authData.session.access_token;
+
+            login(accessToken, userId);
+
+            const authHeaders = {
+                'Authorization': `Bearer ${accessToken}`
+            };
+
+            setLoginStatus('Fetching profile...');
+            try {
+                const profileResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/profile/${userId}`, { headers: authHeaders });
+                console.log("Profile data:", profileResponse.data);
+            } catch (profileError) {
+                console.error("Failed to fetch profile:", profileError);
+                setLoginStatus('Login successful, but failed to fetch profile.');
+            }
+
+            setLoginStatus('Fetching system prompt...');
+            try {
+                const systemPromptResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/system-prompt`, { headers: authHeaders });
+                console.log("System prompt:", systemPromptResponse.data);
+            } catch (promptError) {
+                console.error("Failed to fetch system prompt:", promptError);
+                setLoginStatus('Login successful, but failed to fetch system prompt.');
+            }
+
+            setLoginStatus('Login successful');
+            setStatusHolder('showMessage');
+            router.push('/chat');
+
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error("Error:", errorMessage);
-            setLoginStatus(`Login failed: ${errorMessage}`);
-        }
-    }
-
-
-    useEffect(() => {
-        if(loginStatus !== ''){
-            setStatusHolder('showMessage');
+            console.error("Login process error:", errorMessage);
+            if (!loginStatus.toLowerCase().includes('failed') && !loginStatus.toLowerCase().includes('invalid')) {
+                setLoginStatus(`Login failed: ${errorMessage}`);
+            }
+            setStatusHolder('showMessage error');
             setTimeout(() => {
                 setStatusHolder('message');
                 setLoginStatus('');
             }, 3000);
         }
-    }, [loginStatus]);
+    }
 
-    const onSubmit = () => {
-        setEmail('');
-        setPassword('');
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (statusHolder.includes('showMessage')) {
+            timer = setTimeout(() => {
+                setStatusHolder('message');
+            }, 3000);
+        }
+        return () => clearTimeout(timer);
+    }, [statusHolder]);
+
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        loginUser(e);
     }
 
     return (
@@ -138,7 +174,7 @@ const Login = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn flex" onClick={loginUser}>
+                        <button type="submit" className="btn flex">
                             <span>Log In</span>
                             <ArrowRight className="icon" />
                         </button>
@@ -152,7 +188,6 @@ const Login = () => {
                             className="btn flex" 
                             onClick={() => {
                                 router.push('/chat');
-                                //scaleUpLlm();
                             }}
                             style={{ marginTop: '10px' }}
                         >

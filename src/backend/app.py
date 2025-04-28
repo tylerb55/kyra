@@ -163,7 +163,7 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
             os.environ["gender"] = profile["gender"]
             os.environ["diagnosis"] = profile["diagnosis"]
             os.environ["prescription"] = profile["prescription"]
-        
+            os.environ["role"] = profile["role"]
         return UserProfile(
             id=id,
             username=profile["username"],
@@ -172,6 +172,7 @@ async def get_profie(id: str = Query(..., description="User ID to retrieve profi
             age=profile["age"],
             gender=profile["gender"],
             ethnicity=profile["ethnicity"],
+            role=profile["role"],
             updated_at=profile["updated_at"]
         )
     
@@ -259,6 +260,7 @@ async def update_profile(profile: UserProfile):
             age=profile_data["age"],
             gender=profile_data["gender"],
             ethnicity=profile_data["ethnicity"],
+            role=profile_data["role"],
             updated_at=profile_data["updated_at"]
         )
     

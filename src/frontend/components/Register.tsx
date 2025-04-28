@@ -9,7 +9,7 @@ import { useAuth } from "@/app/contexts";
 import "../styles/App.css";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
-//import axios from "axios";
+import axios from "axios";
 
 const Register = () => {
     const [email, setEmail] = useState('');
@@ -25,12 +25,11 @@ const Register = () => {
 
     const { login } = useAuth();
 
-    //const scaleUpLlm = async () => {
-    //    await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
-    //};
-
     const createUser = async (e: React.FormEvent) => {
         e.preventDefault();
+        setRegisterStatus('Registering...');
+        setStatusHolder('showMessage');
+
         try{
             const { data, error } = await supabase.auth.signUp({
                 email: email,
@@ -38,38 +37,71 @@ const Register = () => {
             });
 
             if (error) {
-                setRegisterStatus('Registration failed');
+                setRegisterStatus(`Registration failed: ${error.message}`);
+                setStatusHolder('showMessage error');
                 throw error;
-            } else {
-                setRegisterStatus('Registration successful');
             }
 
-            // Store user ID in auth context
-            if (data.user && data.user.id && data.session?.access_token) {
-                login(data.session.access_token, data.user.id);
-                //scaleUpLlm();
-                router.push('/profile');
+            if (!data.user || !data.user.id || !data.session?.access_token) {
+                setRegisterStatus('Registration successful, but failed to get session data.');
+                setStatusHolder('showMessage error');
+                throw new Error('Missing user/session data after successful sign up.');
             }
+
+            const userId = data.user.id;
+            const accessToken = data.session.access_token;
+
+            login(accessToken, userId);
+
+            const authHeaders = {
+                'Authorization': `Bearer ${accessToken}`
+            };
+
+            setRegisterStatus('Fetching profile...');
+            try {
+                const profileResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/profile/${userId}`, { headers: authHeaders });
+                console.log("Profile data after registration:", profileResponse.data);
+            } catch (profileError) {
+                console.error("Failed to fetch profile after registration:", profileError);
+                setRegisterStatus('Registration successful, but failed to fetch profile.');
+            }
+
+            setRegisterStatus('Fetching system prompt...');
+            try {
+                const systemPromptResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/system-prompt`, { headers: authHeaders });
+                console.log("System prompt:", systemPromptResponse.data);
+            } catch (promptError) {
+                console.error("Failed to fetch system prompt after registration:", promptError);
+                setRegisterStatus('Registration successful, but failed to fetch system prompt.');
+            }
+
+            setRegisterStatus('Registration successful');
+            setStatusHolder('showMessage');
+            router.push('/profile');
+
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error("Error:", errorMessage);
-            setRegisterStatus(`Registration failed: ${errorMessage}`);
+            console.error("Registration process error:", errorMessage);
+            if (!registerStatus.toLowerCase().includes('failed')) {
+                 setRegisterStatus(`Registration failed: ${errorMessage}`);
+            }
+            setStatusHolder('showMessage error');
         }
     }
 
     useEffect(() => {
-        if(registerStatus !== ''){
-            setStatusHolder('showMessage');
-            setTimeout(() => {
+        let timer: NodeJS.Timeout;
+        if (statusHolder.includes('showMessage')) {
+            timer = setTimeout(() => {
                 setStatusHolder('message');
-                setRegisterStatus('');
             }, 3000);
         }
-    }, [registerStatus]);
+        return () => clearTimeout(timer);
+    }, [statusHolder]);
 
-    const onSubmit = () => {
-        setEmail('');
-        setPassword('');
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        createUser(e);
     }
 
     return (
@@ -136,7 +168,7 @@ const Register = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn flex" onClick={createUser}>
+                        <button type="submit" className="btn flex">
                             <span>Register</span>
                             <ArrowRight className="icon" />
                         </button>
@@ -150,7 +182,6 @@ const Register = () => {
                             className="btn flex" 
                             onClick={() => {
                                 router.push('/chat');
-                                //scaleUpLlm();
                             }}
                             style={{ marginTop: '10px' }}
                         >

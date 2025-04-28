@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProfile, UserProfile } from '../app/contexts';
-
+import axios from 'axios';
 // Define the possible roles (matching your Supabase enum)
 const AppRoles = [
   'admin',
@@ -66,6 +66,7 @@ const Profile = () => {
       // Ensure formData includes the id and potentially updated role before sending
       const dataToUpdate = { ...formData, id: profile.id };
       await updateProfile(dataToUpdate);
+      await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/profile`, dataToUpdate);
       // Optionally show a success message before redirecting
       setMessage('Profile updated successfully!');
       // Redirect after a short delay or keep the user on the page
