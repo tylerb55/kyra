@@ -3,6 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProfile, UserProfile } from '../app/contexts';
 
+// Define the possible roles (matching your Supabase enum)
+const AppRoles = [
+  'admin',
+  'patient',
+  'doctor',
+  'primary_carer',
+  'secondary_carer_friend'
+] as const; // Use 'as const' for stricter typing if desired
+
 const Profile = () => {
   const { profile, loading, error, updateProfile} = useProfile();
   const [formData, setFormData] = useState<UserProfile | null>(null);
@@ -28,9 +37,11 @@ const Profile = () => {
     const { name, value } = e.target;
     setFormData(prev => {
         if (!prev) return prev;
+        // Ensure role is handled correctly if it becomes editable later
+        const newValue = name === 'age' ? (value ? parseInt(value) : null) : value;
         return {
             ...prev,
-            [name]: name === 'age' ? (value ? parseInt(value) : null) : value
+            [name]: newValue
         };
     });
   };
@@ -40,9 +51,10 @@ const Profile = () => {
 
     if (!formData) return;
 
-    // Check if the form is complete
-    const { username, age, gender, ethnicity, diagnosis, prescription } = formData;
-    if (!username || !age || !gender || !ethnicity || !diagnosis || !prescription) {
+    // Check if the form is complete (including role if it becomes required)
+    const { username, age, gender, ethnicity, diagnosis, prescription, role } = formData;
+    // Add role check if it becomes mandatory to be set/selected
+    if (!username || !age || !gender || !ethnicity || !diagnosis || !prescription || !role) {
         setMessage('Please fill in all fields.');
         return;
     }
@@ -51,8 +63,12 @@ const Profile = () => {
       if (!profile?.id) {
         throw new Error('User ID not found in profile.');
       }
-      formData.id = profile?.id;
-      await updateProfile(formData);
+      // Ensure formData includes the id and potentially updated role before sending
+      const dataToUpdate = { ...formData, id: profile.id };
+      await updateProfile(dataToUpdate);
+      // Optionally show a success message before redirecting
+      setMessage('Profile updated successfully!');
+      // Redirect after a short delay or keep the user on the page
       router.push('/chat');
     } catch (error) {
       setMessage(`Failed to update profile. Please try again. ${error}`);
@@ -127,6 +143,27 @@ const Profile = () => {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                   <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                <select
+                  name="role"
+                  value={formData.role || ''} // Use formData.role
+                  // onChange={handleChange} // Disabled for read-only
+                  className="w-full p-3 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 disabled:opacity-75 disabled:cursor-not-allowed"
+                  required // Keep required if the field must have a value
+                  disabled // Make it read-only
+                >
+                  <option value="" disabled>Select role</option>
+                  {/* Map over the defined roles */}
+                  {AppRoles.map(roleOption => (
+                    <option key={roleOption} value={roleOption}>
+                      {/* Simple capitalization for display */}
+                      {roleOption.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </option>
+                  ))}
                 </select>
               </div>
 

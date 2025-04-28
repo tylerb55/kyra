@@ -9,7 +9,7 @@ import { useAuth } from "@/app/contexts";
 import "../styles/App.css";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
-import axios from "axios";
+//import axios from "axios";
 
 const Register = () => {
     const [email, setEmail] = useState('');
@@ -25,9 +25,9 @@ const Register = () => {
 
     const { login } = useAuth();
 
-    const scaleUpLlm = async () => {
-        await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
-    };
+    //const scaleUpLlm = async () => {
+    //    await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
+    //};
 
     const createUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,7 +47,7 @@ const Register = () => {
             // Store user ID in auth context
             if (data.user && data.user.id && data.session?.access_token) {
                 login(data.session.access_token, data.user.id);
-                scaleUpLlm();
+                //scaleUpLlm();
                 router.push('/profile');
             }
         } catch (error) {
@@ -73,7 +73,7 @@ const Register = () => {
     }
 
     return (
-        <div className='registerPage flex'>
+        <div className='registerPage flex' style={{ flexDirection: 'column' }}>
             <div className='container flex'>
                 <div className='videoDiv'>
                     <video src="/video.mp4" autoPlay muted loop></video>
@@ -150,7 +150,7 @@ const Register = () => {
                             className="btn flex" 
                             onClick={() => {
                                 router.push('/chat');
-                                scaleUpLlm();
+                                //scaleUpLlm();
                             }}
                             style={{ marginTop: '10px' }}
                         >
@@ -159,7 +159,16 @@ const Register = () => {
                         </button>
                     </form>
                 </div>
-            </div>  
+            </div>
+            <footer className="disclaimerFooter" style={{ width: '100%', padding: '20px', marginTop: 'auto', backgroundColor: '#f8f8f8', borderTop: '1px solid #eee', fontSize: '0.8em', textAlign: 'center', color: '#666' }}>
+                <p><strong>Welcome to the Kyra test environment. Please read the following disclaimer carefully before entering this platform:</strong></p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0' }}>
+                    <li style={{ marginBottom: '5px' }}><strong>Non-Personal Data Usage:</strong> This test environment is intended for demonstration purposes only. Users must not input any personal, sensitive, or confidential information. All scenarios and data entered should be entirely fictional.</li>
+                    <li style={{ marginBottom: '5px' }}><strong>Liability:</strong> The Kyra test environment is a prototype and not a fully developed product. Kyra is not liable for any outcomes, decisions, or actions taken based on the use of this test environment. Users acknowledge that the system is in a developmental stage and may contain errors or inaccuracies.</li>
+                    <li style={{ marginBottom: '5px' }}><strong>Data Privacy:</strong> Any data entered into the Kyra test environment will not be stored, processed, or used for any purpose other than testing the functionalities of the prototype. Users are responsible for ensuring that no personal data is entered.</li>
+                </ul>
+                <p>By entering the Kyra test environment, you agree to comply with these terms and understand the limitations and intended use of this platform.</p>
+            </footer>
         </div>
     );
 };

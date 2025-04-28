@@ -75,5 +75,9 @@ def format_context_from_records(records) -> str:
             }
             if target_dict not in source_details:
                 source_details.append(target_dict)
+        if i == 0 and cosine_distance > cosine_distance_threshold:
+            context_str += f"No relevant documents found for the query"
+            source_details = []
+            return context_str, source_details
     
     return context_str, source_details

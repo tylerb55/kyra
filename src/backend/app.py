@@ -79,7 +79,7 @@ async def browser_rag(request: BrowserRagRequest):
         context, source_details = format_context_from_nodes(retrieved_nodes)
         
         # Generate response
-        answer = answer_query_with_context(request.query, context, memory, username=os.getenv("username"), age=os.getenv("age"), gender=os.getenv("gender"), diagnosis=os.getenv("diagnosis"), prescription=os.getenv("prescription"))
+        answer = answer_query_with_context(request.query, context, memory, model=request.model)
         
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
@@ -107,7 +107,7 @@ async def database_rag(request: DatabaseRagRequest):
             source_details = []
         
         # Generate response
-        answer = answer_query_with_context(request.query, context, memory, username=os.getenv("username"), age=os.getenv("age"), gender=os.getenv("gender"), diagnosis=os.getenv("diagnosis"), prescription=os.getenv("prescription"))
+        answer = answer_query_with_context(request.query, context, memory, model=request.model)
         
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
@@ -192,7 +192,8 @@ async def update_profile(profile: UserProfile):
             profile.age,
             profile.gender,
             profile.ethnicity,
-            profile.username
+            profile.username,
+            profile.role
         ]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -244,6 +245,7 @@ async def update_profile(profile: UserProfile):
             os.environ["gender"] = profile_data["gender"]
             os.environ["diagnosis"] = profile_data["diagnosis"]
             os.environ["prescription"] = profile_data["prescription"]
+            os.environ["role"] = profile_data["role"]
             os.environ["system_prompt"] = make_system_prompt()
         
         # Return the updated profile with the user_id field
@@ -332,10 +334,12 @@ async def scale_to_zero():
         return False
 
 def make_system_prompt():
-    return f"""You are a expert medical professional. You are tasked with giving
-    safe and accurate medical information. The context provided to you is directly from your knowledge base.
+    return f"""You are a expert medical professional. You are tasked with giving safe and accurate medical information. The context provided to you is directly from your knowledge base.
     If the user asks a medical question and the context does not contain relevant information, you should say 
-    "I can't find that information in my knowledge base." Then try to give a general answer.
+    "I can't find that information in my knowledge base, if you would like me to search the internet please hit the internet button at the top of the page"
+    If asked a non-health question, do not use the context retrieved from the database. 
+
+    You do not know any health details or test results beyond that given in the user profile (prostate cancer diagnosis). If asked about their progression status or test results, respond reassuringly that you do not have this information and you will remind them to enquire about it at their next appointment.
     
     Provide concise, and professional language while maintaining a warm and empathetic approach.
     Keep the entire response in English.
@@ -347,9 +351,10 @@ def make_system_prompt():
     Assume the patient has no medical background and aim to educate without overwhelming.
     I reiterate, make the responses concise. 
     Responses should be no longer than 3 paragraphs but kept shorter where possible. 
-    If more information can be provided, ask the user if they would like you to go into more detail.
+    If more information can be provided, ask the user if they would like you to go into more detail.
     
-    You are speaking with {os.getenv('username')}. A {os.getenv('age')} year old {os.getenv('gender')} diagnosed with {os.getenv('diagnosis')} and prescribed {os.getenv('prescription')}."""
+    You are speaking with {os.getenv('username')}. They are a {os.getenv('role')}. The patient is a {os.getenv('age')} year old {os.getenv('gender')} diagnosed with {os.getenv('diagnosis')} and prescribed {os.getenv('prescription')}.
+    Please tailor your responses to the user's role and background."""
 
 
 @app.get("/system-prompt")

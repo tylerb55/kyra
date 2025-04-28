@@ -7,29 +7,67 @@ import datetime
 from utils.helper_functions import extract_json_from_markdown
 import logging
 from google import genai
+from google.genai import types
 from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def gemini_response(prompt, model):
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-    
-    response = client.models.generate_content(
-        model=model, contents=prompt
-    )
+gemini_chat = None
+current_model = None
+
+def gemini_response(system_prompt, memory, query, model):
+    global gemini_chat, current_model
+    if gemini_chat is None or current_model != model:
+        gemini_chat = genai.Client(api_key=os.environ.get("GEMINI_API_KEY")).chats.create(model=model, config=types.GenerateContentConfig(system_instruction=system_prompt))
+        current_model = model
+
+    memory.append({"role": "user", "content": query})
+    response = gemini_chat.send_message(query)
+    memory.append({"role": "assistant", "content": response.text})
     return response.text
 
     
-def gpt_response(prompt, model):
+def gpt_response(system_prompt, memory, query, model):
+    global current_model
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in memory:
+        messages.append(msg)
+    messages.append({"role": "user", "content": query})
+    memory.append({"role": "user", "content": query})
 
     response = client.responses.create(
         model=model,
         instructions=os.environ("system_prompt"),
-        input=prompt,
+        input=query,
     )
+    current_model = model
     return response.output_text
+
+def tgi_response(system_prompt, memory, query, model):
+    global current_model
+    # Create messages list with system prompt and chat history
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Add conversation history from memory
+    for msg in memory:
+        messages.append(msg)
+    
+    # Add user query
+    user_message = {"role": "user", "content": query}
+    messages.append(user_message)
+    memory.append(user_message)
+    
+    # Generate response using the LLM
+    response = llm.chat.completions.create(
+        model="tgi",  # Using the model specified in your environment
+        messages=messages,
+        max_tokens=400
+    )
+    current_model = model
+    return response 
 
 def get_or_create_memory(session_id: str = None):
     """Get existing memory or create a new one with optional session_id"""
@@ -120,7 +158,7 @@ def save_conversation(session_id, conversation_name=None):
         
         return True if result.data else False
 
-def answer_query_with_context(query, context, memory, username, age, gender, diagnosis, prescription):
+def answer_query_with_context(query, context, memory, model):
     """Answer a query using RAG approach with provided context and chat history."""
     # Create system prompt with context
     system_prompt = f"""{os.getenv("system_prompt")}\n
@@ -131,32 +169,23 @@ def answer_query_with_context(query, context, memory, username, age, gender, dia
     Example:
     The capital of Chile is Santiago de Chile [1], and the population is 7 million people [3].
     
+    If "No relevant documents found for the query" is present in the context, answer with "Unfortunately, I don't have that info in my records of trusted info. If you want to swipe across to free internet searching I can provide some answers from the internet, but please note, I cannot guarantee the reliability of these sources"
+    
     Context:
     {context}
     """
     
-    # Create messages list with system prompt and chat history
-    messages = [{"role": "system", "content": system_prompt}]
-    
-    # Add conversation history from memory
-    for msg in memory:
-        messages.append(msg)
-    
-    # Add user query
-    user_message = {"role": "user", "content": query}
-    messages.append(user_message)
-    memory.append(user_message)
-    
-    # Generate response using the LLM
-    response = llm.chat.completions.create(
-        model="tgi",  # Using the model specified in your environment
-        messages=messages,
-        max_tokens=400
-    )
-    
-    # Extract assistant response
-    assistant_message = {"role": "assistant", "content": response.choices[0].message.content}
-    
+    if "gemini" in model:
+        response = gemini_response(system_prompt, memory, query, model)
+        assistant_message = {"role": "assistant", "content": response}
+    elif "gpt" in model:
+        response = gpt_response(system_prompt, memory, query, model)
+        assistant_message = {"role": "assistant", "content": response}
+    elif "qwen" in model:
+        response = tgi_response(system_prompt, memory, query)
+        assistant_message = {"role": "assistant", "content": response.choices[0].message.content}
+    else:
+        raise ValueError(f"Invalid model: {model}")
     # Add assistant response to memory
     memory.append(assistant_message)
     

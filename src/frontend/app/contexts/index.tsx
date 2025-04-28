@@ -19,6 +19,7 @@ export interface UserProfile {
   age: number | null;
   gender: string;
   ethnicity: string;
+  role: string;
 }
 
 interface ProfileContextType {
@@ -36,7 +37,8 @@ const defaultProfile: UserProfile = {
   prescription: 'None',
   age: 30,
   gender: 'Male',
-  ethnicity: 'White'
+  ethnicity: 'White',
+  role: 'patient'
 };
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);

@@ -7,6 +7,17 @@ import axios from 'axios';
 import { Plus, Menu, Send } from "lucide-react";
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
+// Import Shadcn Select components
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Adjust path if needed
+
 // Define message types
 interface Message {
   id: string;
@@ -23,6 +34,13 @@ interface SavedChat {
   timestamp: string;
 }
 
+// Define the type for source items
+interface SourceItem {
+  citationId?: number | string;
+  title?: string;
+  source?: string; // This property holds the URL/source identifier
+}
+
 const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [savedChats, setSavedChats] = useState<SavedChat[]>([
@@ -35,10 +53,12 @@ const Chat = () => {
   const [mode, setMode] = useState<'RAG' | 'Browser'>('RAG');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLlmActive, setIsLlmActive] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isTranscriptSaved, setIsTranscriptSaved] = useState(true);
+  // Add state for the selected model
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-2.5-flash-preview-04-17');
 
   // function to save transcript
   const saveTranscript = async (chatMessages: Message[], title: string) => {
@@ -97,34 +117,50 @@ const Chat = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [messages, isTranscriptSaved, mode, sessionId]);
 
-  // Check if the LLM is active
+  // Check LLM status *only* if Qwen model is selected
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
     const checkLlmStatus = async () => {
+      // This function only runs if model is Qwen
       setIsCheckingStatus(true);
+      // Assume inactive until proven otherwise for Qwen
+      // setIsLlmActive(false); // Optional: uncomment if you want it to appear inactive during check
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/liveness-check`);
         setIsLlmActive(response.data.active);
-        // If LLM is not active and not initializing, scale up
+        // If LLM is not active and not initializing, scale up (only relevant for Qwen)
         if (!response.data.active && response.data.status !== "initializing") {
           await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scale-up`);
         }
       } catch (error) {
-        console.error('Error checking LLM status:', error);
-        setIsLlmActive(false);
+        console.error('Error checking Qwen LLM status:', error);
+        setIsLlmActive(false); // Set inactive on error
       } finally {
         setIsCheckingStatus(false);
       }
     };
 
-    // Check immediatly on component mount
-    checkLlmStatus();
+    if (selectedModel === 'qwen-2.5-7b') {
+      console.log("Qwen model selected, checking status...");
+      // Start checking for Qwen
+      checkLlmStatus(); // Check immediately
+      intervalId = setInterval(checkLlmStatus, 15000); // Check periodically
+    } else {
+      // For Gemini or other non-Qwen models, assume active immediately
+      console.log("Non-Qwen model selected, setting active.");
+      setIsLlmActive(true);
+      setIsCheckingStatus(false);
+    }
 
-    // Check every 15 seconds
-    const intervalId = setInterval(checkLlmStatus, 15000);
-
-    // Clear interval on component unmount
-    return () => clearInterval(intervalId);
-  }, []);
+    // Cleanup function: clear interval when component unmounts or model changes
+    return () => {
+      if (intervalId) {
+        console.log("Clearing Qwen status check interval.");
+        clearInterval(intervalId);
+      }
+    };
+  }, [selectedModel]); // Re-run this effect when the selected model changes
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -145,9 +181,9 @@ const Chat = () => {
   // Handle sending a message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (inputText.trim() === '') return;
-    
+
+    if (inputText.trim() === '' || !isLlmActive) return; // Also check if LLM is active
+
     // Add user message
     const userMessage: Message = {
       id: generateId(),
@@ -158,16 +194,25 @@ const Chat = () => {
     
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
-    
-    // Make a request to the backend
-    if (mode === 'RAG') {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/database-rag`, {
-        "query": inputText,
-        "session_id": sessionId
+
+    // Determine the endpoint based on the mode
+    const endpoint = mode === 'RAG' ? 'database-rag' : 'browser-rag';
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/${endpoint}`;
+
+    try {
+      // Make a request to the backend, including the selected model
+      const response = await axios.post(url, {
+        "query": userMessage.text, // Use the text from the userMessage object
+        "session_id": sessionId,
+        "model": selectedModel // Send the selected model
       });
 
-      setSessionId(response.data.session_id);
+      // Update session ID if it's new
+      if (response.data.session_id && response.data.session_id !== sessionId) {
+          setSessionId(response.data.session_id);
+      }
 
+      // Add assistant message
       const assistantMessage: Message = {
         id: generateId(),
         text: response.data.answer,
@@ -175,47 +220,42 @@ const Chat = () => {
         timestamp: getFormattedTime()
       };
 
-      const source = response.data.source;
-      const sourceString = source.map((item: { title: string; source: string; author: string }, index: number) => 
-        `[${index + 1}] ${item.title} ${item.source}`
-      ).join('\n');
-      
-      const sourceMessage: Message = {
-        id: generateId(),
-        text: sourceString,
-        sender: 'assistant',
-        timestamp: getFormattedTime()
-      };
+      setMessages(prev => [...prev, assistantMessage]);
 
-      setMessages(prev => [...prev, assistantMessage, sourceMessage]);
-    } else if (mode === 'Browser') {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/browser-rag`, {
-        "query": inputText,
-        "session_id": sessionId
-      });
+      // Add source message if present
+      if (response.data.source && Array.isArray(response.data.source) && response.data.source.length > 0) {
+          const source = response.data.source;
+          // Adjust source string formatting for Markdown
+          const sourceString = source.map((item: SourceItem, index: number) => {
+              const citationId = item.citationId || (index + 1);
+              const title = item.title || 'Unknown Title';
+              const sourceUrl = item.source || 'Unknown Source';
+              // Format with Markdown: bold title
+              return `[${citationId}] **${title}** (${sourceUrl})`;
+          }).join('  \n'); // Join with TWO spaces and a newline for a hard break
 
-      setSessionId(response.data.session_id);
+          if (sourceString.trim() !== '') {
+              const sourceMessage: Message = {
+                  id: generateId(),
+                  // Prepend "Sources:\n" - add two spaces here too for a break after the title
+                  text: `Sources:  \n${sourceString}`,
+                  sender: 'assistant',
+                  timestamp: getFormattedTime()
+              };
+              setMessages(prev => [...prev, sourceMessage]);
+          }
+      }
 
-      const assistantMessage: Message = {
-        id: generateId(),
-        text: response.data.answer, //+ "\n\nURL: " + response.url,
-        sender: 'assistant',
-        timestamp: getFormattedTime()
-      };
-
-      const source = response.data.source;
-      const sourceString = source.map((item: { title: string; source: string; author: string }, index: number) => 
-        `[${index + 1}] ${item.title} ${item.source} by ${item.author}`
-      ).join('\n');
-
-      const sourceMessage: Message = {
-        id: generateId(),
-        text: sourceString,
-        sender: 'assistant',
-        timestamp: getFormattedTime()
-      };
-
-      setMessages(prev => [...prev, assistantMessage, sourceMessage]);
+    } catch (error) {
+        console.error('Error sending message:', error);
+        // Optionally add an error message to the chat
+        const errorMessage: Message = {
+            id: generateId(),
+            text: "Sorry, I encountered an error trying to get a response.",
+            sender: 'assistant',
+            timestamp: getFormattedTime()
+        };
+        setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -281,17 +321,20 @@ const Chat = () => {
     setSidebarOpen(prev => !prev);
   };
 
+  // Determine if the main chat area should be disabled
+  const isChatDisabled = !isLlmActive && selectedModel === 'qwen-2.5-7b';
+
   return (
-    
-    <div className={`flex h-[80vh] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg ${!isLlmActive ? 'opacity-70 pointer-events-none' : ''}`}>
-      {/* Overlay if LLM is inactive */}
-      {!isLlmActive && (
+    // Add opacity/pointer-events only if Qwen is selected and inactive
+    <div className={`flex h-[80vh] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg ${isChatDisabled ? 'opacity-70 pointer-events-none' : ''}`}>
+      {/* Overlay only if Qwen is selected and inactive */}
+      {isChatDisabled && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-auto">
           <div className="bg-gray-800 bg-opacity-75 text-white px-6 py-4 rounded-lg shadow-lg">
             {isCheckingStatus ? (
-              <p>Checking LLM status...</p>
+              <p>Checking Qwen LLM status...</p>
             ) : (
-              <p>LLM service is currently scaling up. Please wait...</p>
+              <p>Qwen LLM service is currently scaling up or unavailable. Please wait...</p>
             )}
           </div>
         </div>
@@ -360,7 +403,7 @@ const Chat = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Top Navigation */}
         <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2"> {/* Added gap for spacing */}
             <button 
               onClick={toggleSidebar}
               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition"
@@ -383,11 +426,31 @@ const Chat = () => {
                 Browser
               </button>
             </div>
+
+            {/* Model Selector */}
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="w-[180px] bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-sm">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Available</SelectLabel>
+                  <SelectItem value="gemini-2.0-flash">gemini-2.0-flash</SelectItem>
+                  <SelectItem value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash</SelectItem>
+                  <SelectItem value="qwen-2.5-7b">qwen-2.5-7b</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Unavailable</SelectLabel>
+                  <SelectItem value="gpt-4.1" disabled>gpt-4.1</SelectItem>
+                  <SelectItem value="gpt-o3" disabled>gpt-o3</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800 p-2">
+        <div className="flex-1 w-full overflow-y-auto bg-white dark:bg-gray-800 p-2">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p>Send a message to chat in {mode} mode</p>
@@ -395,38 +458,47 @@ const Chat = () => {
           ) : (
             <div className="w-full h-full">
               {messages.map(message => (
-                <motion.div 
-                key={message.id}
-                className={`py-6 ${message.sender === 'assistant' ? '' : ''}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="px-4">
-                  <div className={`flex items-start ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {message.sender === 'assistant' && (
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center mr-4 flex-shrink-0 self-start mt-1 overflow-hidden">
-                        <Image 
-                          src="/chat.png" 
-                          alt="AI Assistant" 
-                          width={32}
-                          height={32}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className={`max-w-[75%] ${message.sender === 'user' ? 'bg-gray-100 dark:bg-gray-700 rounded-lg p-4' : ''}`}>
-                      {message.sender === 'assistant' ? (
-                        <div className="markdown-content text-gray-800 dark:text-gray-200 font-sans text-base leading-relaxed px-2 py-1">
-                          <ReactMarkdown>{message.text}</ReactMarkdown>
+                <motion.div
+                  key={message.id}
+                  className="py-6 w-full"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="px-4">
+                    <div className={`flex items-start ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      {message.sender === 'assistant' && (
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center mr-4 flex-shrink-0 self-start mt-1 overflow-hidden">
+                          <Image 
+                            src="/chat.png" 
+                            alt="AI Assistant" 
+                            width={32}
+                            height={32}
+                            className="h-full w-full object-cover"
+                          />
                         </div>
-                      ) : (
-                        <p className="text-gray-800 dark:text-gray-200 font-sans text-base leading-relaxed px-2 py-1">{message.text}</p>
                       )}
+                      <div className={`max-w-xl px-4 py-3 rounded-lg shadow ${
+                        message.sender === 'user'
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}>
+                        {message.sender === 'assistant' ? (
+                          <div className="prose dark:prose-invert max-w-none">
+                            <ReactMarkdown>
+                              {message.text}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p>{message.text}</p>
+                        )}
+                        <span className="block text-xs mt-1 opacity-70 text-right">
+                          {message.timestamp}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
               ))}
               <div ref={messagesEndRef} />
             </div>
@@ -434,13 +506,20 @@ const Chat = () => {
         </div>
         
         {/* Input Area */}
-        <div className="w-2/3 border-gray-200 dark:border-gray-700 p-4">
+        <div className="w-2/3 border-t border-gray-200 dark:border-gray-700 p-4 self-center">
           <div className="max-w-5xl mx-auto">
             <form onSubmit={handleSendMessage} className="relative">
-              <textarea 
+              <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={isLlmActive ? 'Send a message' : 'LLM service unavailable'} 
+                // Update placeholder based on active status and model
+                placeholder={
+                    isLlmActive
+                        ? `Send a message (${selectedModel})`
+                        : selectedModel === 'qwen-2.5-7b'
+                            ? 'Qwen LLM service unavailable...'
+                            : `Send a message (${selectedModel})` // Should be active if not Qwen
+                }
                 rows={1}
                 className="w-full p-4 pr-16 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none min-h-[56px] max-h-[200px] overflow-y-auto"
                 style={{ height: 'auto' }}
@@ -449,19 +528,26 @@ const Chat = () => {
                   target.style.height = 'auto';
                   target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
                 }}
-                disabled={!isLlmActive}
+                // Disable input if the selected model is Qwen and it's not active
+                disabled={!isLlmActive && selectedModel === 'qwen-2.5-7b'}
               />
-              <button 
+              <button
                 type="submit"
                 className="absolute right-3 bottom-3 p-2 rounded-md bg-purple-500 text-white disabled:opacity-50"
+                // Disable button if LLM not active OR input is empty
                 disabled={!isLlmActive || inputText.trim() === ''}
               >
                 <Send className="h-5 w-5" />
               </button>
             </form>
             <p className="text-xs text-center mt-2 text-gray-500">
-              {isLlmActive ? 'Chat Assistant can make mistakes. Check important info.' 
-              : 'LLM service unavailable. Please wait...'}
+              {/* Update footer message based on active status and model */}
+              {isLlmActive
+                ? 'Chat Assistant can make mistakes. Check important info.'
+                : selectedModel === 'qwen-2.5-7b'
+                    ? 'Qwen LLM service unavailable. Please wait...'
+                    : 'Chat Assistant ready.' // Should be active if not Qwen
+              }
             </p>
           </div>
         </div>
