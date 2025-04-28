@@ -43,12 +43,7 @@ interface SourceItem {
 
 const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [savedChats, setSavedChats] = useState<SavedChat[]>([
-    { id: '1', title: 'Hello and Greeting', messages: [], timestamp: 'Today' },
-    { id: '2', title: 'Next.js UI Conversion', messages: [], timestamp: 'Today' },
-    { id: '3', title: 'Vite to Next.js Migration', messages: [], timestamp: 'Today' },
-    { id: '4', title: 'Confusion Matrix Error Debug', messages: [], timestamp: 'Yesterday' },
-  ]);
+  const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [inputText, setInputText] = useState('');
   const [mode, setMode] = useState<'RAG' | 'Browser'>('RAG');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -380,7 +375,7 @@ const Chat = () => {
               
               {/* Yesterday Section */}
               <div className="px-3 py-2">
-                <h3 className="text-xs text-gray-500 font-medium mb-2 px-3">Yesterday</h3>
+                <h3 className="text-xs text-gray-500 font-medium mb-2 px-3"></h3>
                 {savedChats
                   .filter(chat => chat.timestamp === 'Yesterday')
                   .map(chat => (

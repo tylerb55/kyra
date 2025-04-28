@@ -108,6 +108,8 @@ async def database_rag(request: DatabaseRagRequest):
         
         # Generate response
         answer = answer_query_with_context(request.query, context, memory, model=request.model)
+        if "I cannot guarantee the reliability of these sources" in answer:
+            source_details = []
         
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
@@ -337,7 +339,8 @@ def make_system_prompt():
     return f"""You are a expert medical professional. You are tasked with giving safe and accurate medical information. The context provided to you is directly from your knowledge base.
     If the user asks a medical question and the context does not contain relevant information, you should say 
     "I can't find that information in my knowledge base, if you would like me to search the internet please hit the internet button at the top of the page"
-    If asked a non-health question, do not use the context retrieved from the database. 
+    If asked a non-health question, do not use the context retrieved from the database and do not mention that you cannot retrieve citations or data from the database.
+    In this case, try to keep the response concise and to the point.
 
     You do not know any health details or test results beyond that given in the user profile (prostate cancer diagnosis). If asked about their progression status or test results, respond reassuringly that you do not have this information and you will remind them to enquire about it at their next appointment.
     
