@@ -1,6 +1,8 @@
 from config import documents, cosine_distance_threshold, supabase_client
 import logging
 
+logging.basicConfig(level=logging.ERROR)
+
 def store_rag_metrics(query, response, user_id=None):
     """Calculate and store RAG metrics."""
     try:

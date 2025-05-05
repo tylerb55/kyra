@@ -21,11 +21,13 @@ class TokenData(BaseModel):
 # RAG query models
 class BrowserRagRequest(BaseModel):
     query: str
+    user_id: str
     model: Optional[str] = "gemini-2.5-flash-preview-04-17"
     session_id: Optional[str] = None
 
 class DatabaseRagRequest(BaseModel):
     query: str
+    user_id: str
     model: Optional[str] = "gemini-2.5-flash-preview-04-17"
     collection_name: Optional[str] = "rag_documents"
     session_id: Optional[str] = None

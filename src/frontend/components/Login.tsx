@@ -36,6 +36,8 @@ const Login = () => {
                 password: password
             });
 
+            console.log("Auth data:", authData);
+
             if (authError) {
                 setLoginStatus('Invalid email or password');
                 setStatusHolder('showMessage error');
@@ -61,33 +63,41 @@ const Login = () => {
 
             setLoginStatus('Fetching profile...');
             try {
-                const profileResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/profile/${userId}`, { headers: authHeaders });
+                const profileResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/profile?id=${userId}`, { headers: authHeaders });
                 console.log("Profile data:", profileResponse.data);
+
+                setLoginStatus('Fetching system prompt...');
+                try {
+                    const systemPromptResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/system-prompt`, { headers: authHeaders });
+                    console.log("System prompt:", systemPromptResponse.data);
+
+                    setLoginStatus('Login successful');
+                    setStatusHolder('showMessage');
+                    router.push('/chat');
+
+                } catch (promptError) {
+                    console.error("Failed to fetch system prompt:", promptError);
+                    setLoginStatus('Login successful, but failed to fetch system prompt.');
+                    setStatusHolder('showMessage error');
+                    throw promptError;
+                }
+
             } catch (profileError) {
                 console.error("Failed to fetch profile:", profileError);
                 setLoginStatus('Login successful, but failed to fetch profile.');
+                setStatusHolder('showMessage error');
+                throw profileError;
             }
-
-            setLoginStatus('Fetching system prompt...');
-            try {
-                const systemPromptResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/system-prompt`, { headers: authHeaders });
-                console.log("System prompt:", systemPromptResponse.data);
-            } catch (promptError) {
-                console.error("Failed to fetch system prompt:", promptError);
-                setLoginStatus('Login successful, but failed to fetch system prompt.');
-            }
-
-            setLoginStatus('Login successful');
-            setStatusHolder('showMessage');
-            router.push('/chat');
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error("Login process error:", errorMessage);
-            if (!loginStatus.toLowerCase().includes('failed') && !loginStatus.toLowerCase().includes('invalid')) {
+            console.error("Login process error:", error);
+            if (!loginStatus.includes('failed') && !loginStatus.includes('Invalid')) {
                 setLoginStatus(`Login failed: ${errorMessage}`);
             }
-            setStatusHolder('showMessage error');
+            if (!statusHolder.includes('error')) {
+                setStatusHolder('showMessage error');
+            }
             setTimeout(() => {
                 setStatusHolder('message');
                 setLoginStatus('');

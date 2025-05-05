@@ -11,7 +11,7 @@ import requests
 from models import *
 from browser_rag import query_browser, create_vector_index, browser_retrieve, format_context_from_nodes
 from db_rag import retrieve_relevant_documents as db_retrieve, format_context_from_records
-from conversation import get_or_create_memory, save_conversation, answer_query_with_context
+from conversation import get_or_create_memory, save_conversation, answer_query_with_context, check_user_intent, handle_intent
 from insights import router as insights_router
 from config import *
 import logging
@@ -52,11 +52,58 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 @app.post("/save-transcript", status_code=status.HTTP_200_OK)
 async def save_transcript(transcript: TranscriptObject):
     save_conversation(transcript.id, transcript.title)
     return {"message": "Transcript saved"}
 
+@app.get("/profile", response_model=UserProfile)
+async def get_profile(id: str = Query(..., description="User ID to retrieve profile for")):
+    try:
+        # Get profile from database
+        response = supabase_client.table("users").select("*").eq("id", id).execute()
+        profile = response.data[0] if response.data else None
+        
+    
+        if not profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Profile not found"
+            )
+        if profile:
+            # Set default environment variables
+            os.environ["username"] = profile["username"]
+            os.environ["age"] = str(profile["age"])
+            os.environ["gender"] = profile["gender"]
+            os.environ["diagnosis"] = profile["diagnosis"]
+            os.environ["prescription"] = profile["prescription"]
+            os.environ["role"] = profile["role"]
+            logging.info(os.getenv("system_prompt"))
+            os.environ["system_prompt"] = make_system_prompt()
+            logging.info(os.getenv("system_prompt"))
+            
+        return UserProfile(
+            id=id,
+            username=profile["username"],
+            diagnosis=profile["diagnosis"],
+            prescription=profile["prescription"],
+            age=profile["age"],
+            gender=profile["gender"],
+            ethnicity=profile["ethnicity"],
+            role=profile["role"],
+            updated_at=profile["updated_at"]
+        )
+    
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        logging.error(f"Error getting profile: {str(e)} \n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting profile: {str(e)}"
+        )
+        
 # Browser-assisted RAG endpoint
 @app.post("/browser-rag", response_model=RagResponse)
 async def browser_rag(request: BrowserRagRequest):
@@ -93,23 +140,13 @@ async def browser_rag(request: BrowserRagRequest):
 @app.post("/database-rag", response_model=RagResponse)
 async def database_rag(request: DatabaseRagRequest):
     try:
+        # Get profile from database
+        profile = await get_profile(request.user_id)
         # Get or create conversation memory
         session_id, memory = get_or_create_memory(request.session_id)
         
-        try:
-            # Retrieve relevant documents from database
-            retrieved_records = db_retrieve(
-                request.query
-            )
-            context, source_details = format_context_from_records(retrieved_records)
-        except Exception as e:
-            context = "No context provided. Answering from your own knowledge."
-            source_details = []
-        
-        # Generate response
-        answer = answer_query_with_context(request.query, context, memory, model=request.model)
-        if "I cannot guarantee the reliability of these sources" in answer:
-            source_details = []
+        intent = check_user_intent(request.query, request.model)
+        answer, source_details = handle_intent(intent, request.query, memory, request.model, profile)
         
         return {"answer": answer, "source": source_details, "session_id": session_id}
     
@@ -143,47 +180,7 @@ async def clear_conversation(request: ClearConversationRequest):
             detail=f"Error clearing conversation: {str(e)}"
         )
 
-@app.get("/profile", response_model=UserProfile)
-async def get_profie(id: str = Query(..., description="User ID to retrieve profile for")):
-    try:
-        # Get profile from database
-        response = supabase_client.table("users").select("*").eq("id", id).execute()
-        profile = response.data[0] if response.data else None
-        
-    
-        if not profile:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Profile not found"
-            )
-        if profile:
-            # Set default environment variables
-            os.environ["username"] = profile["username"]
-            os.environ["age"] = str(profile["age"])
-            os.environ["gender"] = profile["gender"]
-            os.environ["diagnosis"] = profile["diagnosis"]
-            os.environ["prescription"] = profile["prescription"]
-            os.environ["role"] = profile["role"]
-        return UserProfile(
-            id=id,
-            username=profile["username"],
-            diagnosis=profile["diagnosis"],
-            prescription=profile["prescription"],
-            age=profile["age"],
-            gender=profile["gender"],
-            ethnicity=profile["ethnicity"],
-            role=profile["role"],
-            updated_at=profile["updated_at"]
-        )
-    
-    except HTTPException as e:
-        raise
-    except Exception as e:
-        logging.error(f"Error getting profile: {str(e)} \n{traceback.format_exc()}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error getting profile: {str(e)}"
-        )
+
 
 @app.put("/profile", response_model=UserProfile)
 async def update_profile(profile: UserProfile):

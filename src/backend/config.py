@@ -15,7 +15,7 @@ supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
 supabase_client = supabase.create_client(supabase_url, supabase_key)
 
 # cosine distance threshold
-cosine_distance_threshold = 0.4
+cosine_distance_threshold = 0.38
 
 # Initialize OpenAI client
 llm = OpenAI(

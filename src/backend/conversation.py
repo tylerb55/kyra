@@ -1,6 +1,8 @@
 import uuid
 from collections import deque
-from config import conversation_memories, conversations, llm, supabase_client
+from config import conversation_memories, conversations, llm, supabase_client, cosine_distance_threshold
+from prompts import *
+from db_rag import retrieve_relevant_documents
 import os
 import json
 import datetime
@@ -10,21 +12,29 @@ from google import genai
 from google.genai import types
 from openai import OpenAI
 from dotenv import load_dotenv
+from models import UserProfile
 
 load_dotenv()
 
-gemini_chat = None
+gemini_chat = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 current_model = None
 
 def gemini_response(system_prompt, memory, query, model):
-    global gemini_chat, current_model
-    if gemini_chat is None or current_model != model:
-        gemini_chat = genai.Client(api_key=os.environ.get("GEMINI_API_KEY")).chats.create(model=model, config=types.GenerateContentConfig(system_instruction=system_prompt))
-        current_model = model
+    global current_model
 
     memory.append({"role": "user", "content": query})
-    response = gemini_chat.send_message(query)
-    memory.append({"role": "assistant", "content": response.text})
+    
+    contents = []
+    for message in memory:
+        contents.append(types.Content(role=message["role"], parts=[types.Part(text=message["content"])]))
+    
+    response = gemini_chat.models.generate_content(
+        model=model,
+        contents=contents,
+        config=types.GenerateContentConfig(system_instruction=system_prompt)
+    )
+    memory.append({"role": "model", "content": response.text})
+    current_model = model
     return response.text
 
     
@@ -157,6 +167,79 @@ def save_conversation(session_id, conversation_name=None):
         }).execute()
         
         return True if result.data else False
+    
+def format_context_from_records(records, profile: UserProfile):
+    """Format retrieved records into a context string for the LLM."""
+    context_str = f"Patient Information: You are speaking to {profile.username} who is a {profile.role} with {profile.diagnosis}. Their age is {profile.age} and their gender is {profile.gender}. They have been prescribed {profile.prescription}.\n\n"
+    for i, record in enumerate(records):
+        if record[1] < cosine_distance_threshold:
+            context_str += f"Citation ID [{i+1}]:\n{record[2]['content']}\n\n"
+    return context_str
+
+def check_user_intent(query, model):
+    """Check the user's intent based on the query."""
+    system_prompt = f"""
+    You are a medical advisor called Kyra.
+    You are given a query.
+    Your job is to classify the user's intent based on the query.
+    The possible intents are:
+    greetings_chit_chat - The user is greeting you or having general non-medical conversation.
+    clarification_questions - The user is asking to repeat or further explain something previously mentioned in the conversation.
+    app_functionality_questions - The user is asking about the app, how to use it or what it can do.
+    diagnosis_questions - The user is asking about their diagnosis, what it means or what the implications are.
+    treatment_questions - The user is asking for information about their specific treatment plan or prescription.
+    prognosis_questions - User asking about their specific outlook or chances of recovery/recurrence. Extremely sensitive, handle with utmost care and strong disclaimers, potentially deflecting to discussion with their doctor.
+    side_effects_questions - User asking how to manage a common side effect (e.g., "How to deal with fatigue?", "What helps with hot flashes?"). Response can be tailored based on their likely treatment causing it.
+    emotional_support_questions - User asking for emotional support, advice or just someone to talk to.
+    general_medical_questions - User asking a general medical question that is not specific or related to the user.
+    Respond ONLY with the intent name (e.g., "diagnosis_questions"). Do not add any other text or formatting.
+    Example:
+    Query: What are the side effects of Leuprolide?
+    Intent: side_effects_questions
+    """
+    query = f"Query: {query}"
+    intent_response = gemini_response(system_prompt, [], query, model)
+    return intent_response
+
+def handle_intent(intent, query, memory, model, profile: UserProfile):
+    """Handle the user's intent."""
+    if "greetings_chit_chat" in intent:
+        return gemini_response(base_system_prompt, memory, query, model), []
+    elif "app_functionality_questions" in intent:
+        return gemini_response(make_app_functionality_prompt(), memory, query, model), []
+    elif "clarification_questions" in intent:
+        context = retrieve_relevant_documents(query)
+        source_details = format_context_from_records(context)
+        context_string = format_context_from_records(context)
+        query = f"Context: {context_string}\nQuery: {query}"
+        return gemini_response(make_clarification_prompt(), memory, query, model), source_details
+    elif "prognosis_questions" in intent:
+        query = f"I have been diagnosed with {profile.diagnosis}. {query}"
+        context = retrieve_relevant_documents(query)
+        source_details = format_context_from_records(context)
+        context_string = format_context_from_records(context)
+        query = f"Context: {context_string}\nQuery: {query}"
+        return gemini_response(make_prognosis_prompt(), memory, query, model), source_details
+    elif "diagnosis_questions" in intent:
+        query = f"I have been diagnosed with {profile.diagnosis}. {query}"
+        context = retrieve_relevant_documents(query)
+        source_details = format_context_from_records(context)
+        context_string = format_context_from_records(context)
+        query = f"Context: {context_string}\nQuery: {query}"
+        return gemini_response(make_diagnosis_prompt(), memory, query, model), source_details
+    elif "treatment_questions" in intent:
+        query = f"I have been prescribed {profile.prescription}. {query}"
+        context = retrieve_relevant_documents(query)
+        source_details = format_context_from_records(context)
+        context_string = format_context_from_records(context)
+        query = f"Context: {context_string}\nQuery: {query}"
+        return gemini_response(make_treatment_prompt(), memory, query, model), source_details
+    else:
+        context = retrieve_relevant_documents(query)
+        source_details = format_context_from_records(context)
+        context_string = format_context_from_records(context)
+        query = f"Context: {context_string}\nQuery: {query}"
+        return gemini_response(base_system_prompt, memory, query, model), source_details
 
 def answer_query_with_context(query, context, memory, model):
     """Answer a query using RAG approach with provided context and chat history."""

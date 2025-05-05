@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Adjust path if needed
+import { useAuth } from "@/app/contexts";
 
 // Define message types
 interface Message {
@@ -52,6 +53,8 @@ const Chat = () => {
   const [isLlmActive, setIsLlmActive] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isTranscriptSaved, setIsTranscriptSaved] = useState(true);
+  // auth context
+  const { userId } = useAuth();
   // Add state for the selected model
   const [selectedModel, setSelectedModel] = useState<string>('gemini-2.5-flash-preview-04-17');
 
@@ -198,6 +201,7 @@ const Chat = () => {
       // Make a request to the backend, including the selected model
       const response = await axios.post(url, {
         "query": userMessage.text, // Use the text from the userMessage object
+        "user_id": userId,
         "session_id": sessionId,
         "model": selectedModel // Send the selected model
       });
