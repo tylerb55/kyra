@@ -2,7 +2,7 @@ import uuid
 from collections import deque
 from config import conversation_memories, conversations, llm, supabase_client, cosine_distance_threshold
 from prompts import *
-from db_rag import retrieve_relevant_documents
+from db_rag import retrieve_relevant_documents, format_context_from_records
 import os
 import json
 import datetime
@@ -168,7 +168,7 @@ def save_conversation(session_id, conversation_name=None):
         
         return True if result.data else False
     
-def format_context_from_records(records, profile: UserProfile):
+def format_to_context_string(records, profile: UserProfile):
     """Format retrieved records into a context string for the LLM."""
     context_str = f"Patient Information: You are speaking to {profile.username} who is a {profile.role} with {profile.diagnosis}. Their age is {profile.age} and their gender is {profile.gender}. They have been prescribed {profile.prescription}.\n\n"
     for i, record in enumerate(records):
@@ -209,35 +209,35 @@ def handle_intent(intent, query, memory, model, profile: UserProfile):
         return gemini_response(make_app_functionality_prompt(), memory, query, model), []
     elif "clarification_questions" in intent:
         context = retrieve_relevant_documents(query)
-        source_details = format_context_from_records(context)
-        context_string = format_context_from_records(context)
+        _, source_details = format_context_from_records(context)
+        context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
         return gemini_response(make_clarification_prompt(), memory, query, model), source_details
     elif "prognosis_questions" in intent:
         query = f"I have been diagnosed with {profile.diagnosis}. {query}"
         context = retrieve_relevant_documents(query)
-        source_details = format_context_from_records(context)
-        context_string = format_context_from_records(context)
+        _, source_details = format_context_from_records(context)
+        context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
         return gemini_response(make_prognosis_prompt(), memory, query, model), source_details
     elif "diagnosis_questions" in intent:
         query = f"I have been diagnosed with {profile.diagnosis}. {query}"
         context = retrieve_relevant_documents(query)
-        source_details = format_context_from_records(context)
-        context_string = format_context_from_records(context)
+        _, source_details = format_context_from_records(context)
+        context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
         return gemini_response(make_diagnosis_prompt(), memory, query, model), source_details
     elif "treatment_questions" in intent:
         query = f"I have been prescribed {profile.prescription}. {query}"
         context = retrieve_relevant_documents(query)
-        source_details = format_context_from_records(context)
-        context_string = format_context_from_records(context)
+        _, source_details = format_context_from_records(context)
+        context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
         return gemini_response(make_treatment_prompt(), memory, query, model), source_details
     else:
         context = retrieve_relevant_documents(query)
-        source_details = format_context_from_records(context)
-        context_string = format_context_from_records(context)
+        _, source_details = format_context_from_records(context)
+        context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
         return gemini_response(base_system_prompt, memory, query, model), source_details
 
