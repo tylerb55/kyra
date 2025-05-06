@@ -212,6 +212,8 @@ def handle_intent(intent, query, memory, model, profile: UserProfile):
         _, source_details = format_context_from_records(context)
         context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
+        if "Sorry, I don't have information on that topic." in query:
+            source_details = []
         return gemini_response(make_clarification_prompt(), memory, query, model), source_details
     elif "prognosis_questions" in intent:
         query = f"I have been diagnosed with {profile.diagnosis}. {query}"
@@ -219,6 +221,8 @@ def handle_intent(intent, query, memory, model, profile: UserProfile):
         _, source_details = format_context_from_records(context)
         context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
+        if "Sorry, I don't have information on that topic." in query:
+            source_details = []
         return gemini_response(make_prognosis_prompt(), memory, query, model), source_details
     elif "diagnosis_questions" in intent:
         query = f"I have been diagnosed with {profile.diagnosis}. {query}"
@@ -226,6 +230,8 @@ def handle_intent(intent, query, memory, model, profile: UserProfile):
         _, source_details = format_context_from_records(context)
         context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
+        if "Sorry, I don't have information on that topic." in query:
+            source_details = []
         return gemini_response(make_diagnosis_prompt(), memory, query, model), source_details
     elif "treatment_questions" in intent:
         query = f"I have been prescribed {profile.prescription}. {query}"
@@ -233,12 +239,16 @@ def handle_intent(intent, query, memory, model, profile: UserProfile):
         _, source_details = format_context_from_records(context)
         context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
+        if "Sorry, I don't have information on that topic." in query:
+            source_details = []
         return gemini_response(make_treatment_prompt(), memory, query, model), source_details
     else:
         context = retrieve_relevant_documents(query)
         _, source_details = format_context_from_records(context)
         context_string = format_to_context_string(context, profile)
         query = f"Context: {context_string}\nQuery: {query}"
+        if "Sorry, I don't have information on that topic." in query:
+            source_details = []
         return gemini_response(base_system_prompt, memory, query, model), source_details
 
 def answer_query_with_context(query, context, memory, model):
