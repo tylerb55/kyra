@@ -1,50 +1,56 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, ShieldAlert, ArrowRight } from "lucide-react";
 import "../styles/App.css";
-import { useAccount } from "@/app/contexts";
+import { useAuth } from "@/app/contexts";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/server";
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const router = useRouter();
+    const supabase = createClientComponentClient({
+        supabaseUrl: SUPABASE_URL,
+        supabaseKey: SUPABASE_ANON_KEY
+    });
 
     const [loginStatus, setLoginStatus] = useState('');
     const [statusHolder, setStatusHolder] = useState('message');
 
-    const { setAccountDetails } = useAccount();
-    
-    // Use useEffect to set account details to null on component mount
-    useEffect(() => {
-        setAccountDetails(null);
-    }, [setAccountDetails]);
+    const { login } = useAuth();
 
-    const loginUser = (e: React.FormEvent) => {
+    const loginUser = async (e: React.FormEvent) => {
         e.preventDefault();
-        axios.post('http://16.171.196.43/api/login', {
-            Email: email,
-            Password: password,
-        }).then((response) => {
-            console.log(response);
-            if (response.status === 200) {
-                setAccountDetails(response);
-                router.push('/chat');
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                setLoginStatus('Invalid email or password');
+                throw error;
             } else {
-                router.push('/');
-                setLoginStatus('Login failed');
+                setLoginStatus('Login successful');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error.response ? error.response.data : error.message);
-            router.push('/');
-            setLoginStatus('Login failed');
-        });
+
+            // Store user ID in auth context
+            if (data.user && data.user.id && data.session?.access_token) {
+                login(data.session.access_token, data.user.id);
+                router.push('/chat');
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error("Error:", errorMessage);
+            setLoginStatus(`Login failed: ${errorMessage}`);
+        }
     }
+
 
     useEffect(() => {
         if(loginStatus !== ''){
@@ -73,7 +79,7 @@ const Login = () => {
                     </div>
 
                     <div className="footerDiv flex">
-                        <span className="text">Don't have an account?</span>
+                        <span className="text">Don&apos;t have an account?</span>
                         <Link href="/register" className="link">
                             <button className="btn">Sign Up</button>
                         </Link>

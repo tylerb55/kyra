@@ -1,0 +1,50 @@
+[
+  {
+      "document": "What's my cancer risk from smoking?",
+      "id": "1",
+      "page": 1,
+      "text": "Smoking causes at least 16 different types of cancer and is the biggest cause of lung cancer in the UK. Smoking causes other diseases too, such as heart disease and various lung diseases.\n\nIf you smoke, stopping completely is the best thing you can do for your health.\n\nBoth the amount you smoke, and the length of time you've been smoking for, affect your cancer risk.\n\nThe more cigarettes you smoke a day, the higher your risk of cancer. So reducing the number of cigarettes you smoke a day is a good first step.\n\nBut the number of years you smoke for affects your cancer risk the most. So it's important to make a plan to stop smoking completely.\n\nThe sooner you stop, the lower your risk of cancer. Everyone who smokes can benefit from stopping, and it's never too late to stop - even if you've smoked for years.",
+      "source": "https://cancer-resource.org/smoking-risk",
+      "author": "Cancer Research UK"
+  },
+  {
+      "document": "What types of cancer does smoking cause?",
+      "id": "2",
+      "page": 1,
+      "text": "The link between smoking and cancer is very clear. It causes at least 16 different types of cancer, including two of the most common types: lung cancer and bowel cancer.\n\nCancers caused by smoking include:\n\n- nose and sinuses\n- mouth\n- pharynx (upper throat)\n- larynx (voice box)\n- oesophagus (food pipe)\n- lung\n- breast\n- liver\n- stomach\n- kidney\n- pancreas\n- bowel\n- ovary\n- bladder\n- cervix\n- some types of leukaemia",
+      "source": "https://cancer-resource.org/smoking-risk",
+      "author": "Cancer Research UK"
+  },
+  {
+      "document": "Survival for all stages of breast cancer",
+      "id": "3",
+      "page": 1,
+      "text": "Generally for women with breast cancer in England:\n\n- Around 95 out of every 100 women (around 95%) survive their cancer for 1 year or more after diagnosis.\n- Around 85 out of every 100 women (around 85%) will survive their cancer for 5 years or more after diagnosis.\n- Around 75 out of every 100 women (around 75%) will survive their cancer for 10 years or more after diagnosis.",
+      "source": "https://cancer-resource.org/breast-cancer-survival",
+      "author": "Cancer Research UK"
+  },
+  {
+      "document": "Why chemotherapy causes side effects",
+      "id": "4",
+      "page": 1,
+      "text": "Chemotherapy doesn’t only kill cancer cells. It also affects healthy body tissues where the cells are constantly growing and dividing, such as:\n\n- your hair\n- your bone marrow\n- your skin and the lining of your digestive system\n\nThe damage to these cells can cause side effects. But normal cells can replace or repair the healthy cells that are damaged by chemotherapy. So the damage to healthy cells doesn't usually last.\n\nMost side effects disappear once your treatment is over. Some side effects such as sickness or diarrhoea might only happen during the days you are having the drugs.",
+      "source": "https://cancer-resource.org/chemotherapy-side-effects",
+      "author": "Cancer Research UK"
+  },
+  {
+      "document": "How does degarelix work?",
+      "id": "5",
+      "page": 1,
+      "text": "Prostate cancer depends on testosterone to grow. Hormone therapy blocks or lowers the amount of testosterone in the body.\n\nDegarelix works by blocking messages from a part of the brain called the hypothalamus that tells the pituitary gland to produce luteinising hormone. Luteinising hormone tells the testicles to produce testosterone. So degarelix stops the testicles from making testosterone.\n\nThis type of hormone therapy is called a gonadotrophin-releasing hormone antagonist or GnRH blocker.",
+      "source": "https://cancer-resource.org/degarelix-how-it-works",
+      "author": "Cancer Research UK"
+  },
+  {
+      "document": "How long have I got to live?",
+      "id": "6",
+      "page": 1,
+      "text": "People with cancer and their families often want to know how long a person is expected to live. Your doctor won’t be able to give you an exact answer. Everyone is different, and no one can say exactly how long you will live. But do ask if you feel you need to. You can explain that you don‘t expect them to be completely accurate, but you need to plan the time you have left.\n\nYour doctor might be able to give you an estimated time, based on how long other people with your type and stage of cancer have lived. Remember that your doctor’s answer is an estimate. The actual time could be shorter or longer than they say.\n\nIt’s easier for doctors to estimate a likely time if they have been treating you for a while and know you well. The doctors and nurses you see regularly will know how things are going for you. It could be tough if your doctors tell you that you only have a very short time left (for example, weeks). You might have to make some serious decisions based on this information.\n\nIt might feel very strange if you live longer than your doctor estimates. Some people say they feel as though other people are waiting for them to die. It can help to talk this through with someone.",
+      "source": "https://cancer-resource.org/how-long-have-i-got-to-live",
+      "author": "Cancer Research UK"
+  }
+]

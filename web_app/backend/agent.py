@@ -1,5 +1,5 @@
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
-from llama_index.llms import OpenAI
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
+from llama_index.llms.openai import OpenAI
 from llama_index.readers.web import SimpleWebPageReader
 from llama_index.core import Settings
 from typing import List, Dict, Any, Optional
@@ -11,7 +11,7 @@ import supabase
 load_dotenv("../.env")
 
 # Initialize LlamaIndex
-Settings.llm = OpenAI(model="gpt-4", temperature=0.1)
+Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0.1)
 
 # Supabase client
 supabase_url = os.getenv("SUPABASE_URL")
@@ -45,14 +45,18 @@ class RAGAgent:
         Perform database RAG using documents from Supabase
         """
         # Get user-specific data from Supabase
-        collection = collection_name or "default_collection"
+        category = collection_name or "default"
         
-        # Query user's documents from the database
-        response = supabase_client.table("documents").select("*").eq("user_id", user_id).eq("collection", collection).execute()
+        # Query documents from the database
+        response = supabase_client.table("rag_documents").select("*")
+        if category != "default":
+            response = response.eq("category", category)
+        
+        response = response.execute()
         
         if not response.data:
             return {
-                "response": "No documents found in your collection.",
+                "response": "No documents found in the medical knowledge base.",
                 "sources": []
             }
         

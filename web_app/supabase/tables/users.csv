@@ -1,0 +1,8 @@
+id,username,diagnosis,prescription,age,gender,ethnicity
+524b5d50-fba6-42a4-8a8b-06516a5e1e08,patient1,Breast Cancer Stage II,Tamoxifen 20mg daily,45,Female,Caucasian
+6b8e0e1c-7794-4c29-87f9-1a24ef64be91,patient2,Prostate Cancer,Enzalutamide 160mg daily,67,Male,African American
+be4e5436-46f6-4988-a3c3-9d985d031aa0,patient3,Colorectal Cancer Stage III,FOLFOX regimen,52,Male,Hispanic
+ce3982ef-07af-442e-91bc-07b9037f796a,patient4,Lung Cancer (Non-Small Cell),Pembrolizumab 200mg every 3 weeks,59,Female,Asian
+7c41938b-84aa-47e3-acdf-2463f50181f1,patient5,Leukemia (AML),Cytarabine and Idarubicin,34,Non-binary,Caucasian
+1b41906d-c7c7-433a-83fd-2d2fdaee788b,doctor1,NULL,NULL,48,Male,Middle Eastern
+43160526-1211-45f6-a83d-d10dfde1d2e4,admin1,NULL,NULL,42,Female,Caucasian
